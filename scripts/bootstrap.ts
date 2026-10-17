@@ -75,7 +75,9 @@ async function main() {
     });
     if (error) die(`Could not create admin user: ${error.message}`);
     await admin.from("invitations").update({ status: "accepted" }).eq("email", email).eq("status", "pending");
-    console.log(`✔ Admin account created for ${email}. Sign in at ${process.env.NEXT_PUBLIC_SITE_URL ?? "your app URL"}/login`);
+    console.log(
+      `✔ Admin account created for ${email}. Sign in at ${process.env.NEXT_PUBLIC_SITE_URL ?? "your app URL"}/login`,
+    );
   } else {
     const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
     const { error } = await admin.auth.admin.inviteUserByEmail(email, {

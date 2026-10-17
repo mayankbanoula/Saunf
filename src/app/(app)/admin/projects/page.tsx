@@ -20,7 +20,9 @@ async function Projects() {
   const [{ data: projects, error }, { data: members }] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, name, status, is_private, archived_at, created_at, owner:profiles!projects_owner_profile_fkey(id, full_name, email), project_members(count), tasks!tasks_workspace_id_project_id_fkey(count)")
+      .select(
+        "id, name, status, is_private, archived_at, created_at, owner:profiles!projects_owner_profile_fkey(id, full_name, email), project_members(count), tasks!tasks_workspace_id_project_id_fkey(count)",
+      )
       .order("archived_at", { nullsFirst: true })
       .order("name"),
     supabase
@@ -30,11 +32,15 @@ async function Projects() {
       .eq("is_active", true),
   ]);
   if (error) throw new Error(`Could not load projects: ${error.message}`);
-  const people = (members ?? []).map((m) => ({ id: m.user_id, name: displayName(m.profiles) })).sort((a, b) => a.name.localeCompare(b.name));
+  const people = (members ?? [])
+    .map((m) => ({ id: m.user_id, name: displayName(m.profiles) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   return (
     <>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">Admins can see and manage every project, including private ones.</p>
+        <p className="text-sm text-muted-foreground">
+          Admins can see and manage every project, including private ones.
+        </p>
         <NewProjectButton members={people} />
       </div>
       <Card>
@@ -59,7 +65,11 @@ async function Projects() {
                   </Link>
                 </TableCell>
                 <TableCell>
-                  {p.archived_at ? <Badge variant="warning">Archived</Badge> : <Badge variant="secondary">{PROJECT_STATUS_LABEL[p.status]}</Badge>}
+                  {p.archived_at ? (
+                    <Badge variant="warning">Archived</Badge>
+                  ) : (
+                    <Badge variant="secondary">{PROJECT_STATUS_LABEL[p.status]}</Badge>
+                  )}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">{p.owner ? displayName(p.owner) : "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{p.project_members[0]?.count ?? 0}</TableCell>

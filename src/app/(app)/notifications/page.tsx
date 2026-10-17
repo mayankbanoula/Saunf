@@ -26,9 +26,12 @@ async function NotificationsContent({ searchParams }: { searchParams: Promise<SP
   const supabase = await createClient();
   let query = supabase
     .from("notifications")
-    .select("id, type, created_at, read_at, data, actor:profiles!notifications_actor_id_fkey(id, full_name, email), task:tasks(key)", {
-      count: "exact",
-    })
+    .select(
+      "id, type, created_at, read_at, data, actor:profiles!notifications_actor_id_fkey(id, full_name, email), task:tasks(key)",
+      {
+        count: "exact",
+      },
+    )
     .eq("recipient_id", viewer.id)
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE - 1);
@@ -52,7 +55,11 @@ async function NotificationsContent({ searchParams }: { searchParams: Promise<SP
         <MarkAllReadButton />
       </div>
       {items.length === 0 ? (
-        <EmptyState icon={BellIcon} title={unreadOnly ? "No unread notifications" : "No notifications yet"} description="You'll be notified about assignments, mentions, comments, reviews and deadlines." />
+        <EmptyState
+          icon={BellIcon}
+          title={unreadOnly ? "No unread notifications" : "No notifications yet"}
+          description="You'll be notified about assignments, mentions, comments, reviews and deadlines."
+        />
       ) : (
         <ul className="divide-y rounded-lg border bg-card">
           {items.map((n) => (
@@ -65,13 +72,21 @@ async function NotificationsContent({ searchParams }: { searchParams: Promise<SP
       {pages > 1 ? (
         <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
           <Button asChild variant="outline" size="sm" className={cn(page <= 1 && "invisible")}>
-            <Link href={`/notifications?${new URLSearchParams({ ...(unreadOnly ? { filter: "unread" } : {}), page: String(page - 1) })}`}>Newer</Link>
+            <Link
+              href={`/notifications?${new URLSearchParams({ ...(unreadOnly ? { filter: "unread" } : {}), page: String(page - 1) })}`}
+            >
+              Newer
+            </Link>
           </Button>
           <span>
             Page {page} of {pages}
           </span>
           <Button asChild variant="outline" size="sm" className={cn(page >= pages && "invisible")}>
-            <Link href={`/notifications?${new URLSearchParams({ ...(unreadOnly ? { filter: "unread" } : {}), page: String(page + 1) })}`}>Older</Link>
+            <Link
+              href={`/notifications?${new URLSearchParams({ ...(unreadOnly ? { filter: "unread" } : {}), page: String(page + 1) })}`}
+            >
+              Older
+            </Link>
           </Button>
         </div>
       ) : null}

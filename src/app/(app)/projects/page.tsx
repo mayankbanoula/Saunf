@@ -27,7 +27,9 @@ async function ProjectsContent({ searchParams }: { searchParams: Promise<SP> }) 
 
   let query = supabase
     .from("projects")
-    .select("id, name, description, status, is_private, target_date, archived_at, owner:profiles!projects_owner_profile_fkey(id, full_name, email), project_members(count)")
+    .select(
+      "id, name, description, status, is_private, target_date, archived_at, owner:profiles!projects_owner_profile_fkey(id, full_name, email), project_members(count)",
+    )
     .order("name");
   query = showArchived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
   const [{ data: projects, error }, { data: progress }] = await Promise.all([query, supabase.rpc("project_progress")]);
@@ -37,10 +39,16 @@ async function ProjectsContent({ searchParams }: { searchParams: Promise<SP> }) 
   return (
     <>
       <div className="mb-4 flex gap-3 text-sm">
-        <Link href="/projects" className={!showArchived ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}>
+        <Link
+          href="/projects"
+          className={!showArchived ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}
+        >
           Active
         </Link>
-        <Link href="/projects?archived=1" className={showArchived ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}>
+        <Link
+          href="/projects?archived=1"
+          className={showArchived ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}
+        >
           Archived
         </Link>
       </div>
@@ -48,7 +56,11 @@ async function ProjectsContent({ searchParams }: { searchParams: Promise<SP> }) 
         <EmptyState
           icon={FolderKanbanIcon}
           title={showArchived ? "No archived projects" : "No projects yet"}
-          description={viewer.role === "employee" ? "Projects created by managers and admins appear here." : "Create a project to group related work."}
+          description={
+            viewer.role === "employee"
+              ? "Projects created by managers and admins appear here."
+              : "Create a project to group related work."
+          }
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -68,13 +80,20 @@ async function ProjectsContent({ searchParams }: { searchParams: Promise<SP> }) 
                           <LockIcon /> Private
                         </Badge>
                       ) : null}
-                      <Badge variant={p.status === "active" ? "accent" : "secondary"}>{PROJECT_STATUS_LABEL[p.status]}</Badge>
+                      <Badge variant={p.status === "active" ? "accent" : "secondary"}>
+                        {PROJECT_STATUS_LABEL[p.status]}
+                      </Badge>
                     </div>
                   </div>
-                  <p className="mb-3 line-clamp-2 min-h-10 text-sm text-muted-foreground">{p.description || "No description."}</p>
+                  <p className="mb-3 line-clamp-2 min-h-10 text-sm text-muted-foreground">
+                    {p.description || "No description."}
+                  </p>
                   <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                     <span>
-                      {done}/{total} tasks done{Number(s?.overdue ?? 0) > 0 ? <span className="text-destructive"> · {s?.overdue} overdue</span> : null}
+                      {done}/{total} tasks done
+                      {Number(s?.overdue ?? 0) > 0 ? (
+                        <span className="text-destructive"> · {s?.overdue} overdue</span>
+                      ) : null}
                     </span>
                     <span>{pct}%</span>
                   </div>
@@ -105,7 +124,9 @@ async function HeaderActions() {
     .select("user_id, profiles!workspace_members_user_id_fkey(full_name, email)")
     .eq("workspace_id", viewer.workspaceId)
     .eq("is_active", true);
-  const members = (data ?? []).map((m) => ({ id: m.user_id, name: displayName(m.profiles) })).sort((a, b) => a.name.localeCompare(b.name));
+  const members = (data ?? [])
+    .map((m) => ({ id: m.user_id, name: displayName(m.profiles) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   return <NewProjectButton members={members} />;
 }
 

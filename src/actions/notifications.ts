@@ -21,7 +21,9 @@ export type NotificationItem = {
 const SELECT =
   "id, type, created_at, read_at, data, actor:profiles!notifications_actor_id_fkey(id, full_name, email), task:tasks(key)";
 
-export async function listNotifications(limit = 15): Promise<ActionResult<{ items: NotificationItem[]; unread: number }>> {
+export async function listNotifications(
+  limit = 15,
+): Promise<ActionResult<{ items: NotificationItem[]; unread: number }>> {
   return runAction(async () => {
     const viewer = await viewerForAction();
     const supabase = await createClient();

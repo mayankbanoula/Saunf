@@ -53,7 +53,8 @@ export async function TaskListView({
   // Strip the page's fixed filters so pagination links stay clean.
   const linkParams = filtersToSearchParams(filters);
   for (const key of Object.keys(overrides)) linkParams.delete(key);
-  const filtered = activeFilterCount({ ...filters, ...Object.fromEntries(Object.keys(overrides).map((k) => [k, undefined])) }) > 0;
+  const filtered =
+    activeFilterCount({ ...filters, ...Object.fromEntries(Object.keys(overrides).map((k) => [k, undefined])) }) > 0;
 
   return (
     <>
@@ -66,11 +67,28 @@ export async function TaskListView({
           action={!filtered && canCreateTasks(viewer) ? <NewTaskButton defaults={createDefaults} /> : undefined}
         />
       ) : filters.view === "board" ? (
-        <TaskBoard rows={result.rows} today={ctx.today} nowTime={ctx.nowTime} truncated={result.rows.length >= BOARD_LIMIT} />
+        <TaskBoard
+          rows={result.rows}
+          today={ctx.today}
+          nowTime={ctx.nowTime}
+          truncated={result.rows.length >= BOARD_LIMIT}
+        />
       ) : (
         <>
-          <TaskTable rows={result.rows} today={ctx.today} nowTime={ctx.nowTime} members={options.members} columns={columns} />
-          <Pagination page={filters.page} pageSize={PAGE_SIZE} total={result.total} basePath={basePath} searchParams={linkParams} />
+          <TaskTable
+            rows={result.rows}
+            today={ctx.today}
+            nowTime={ctx.nowTime}
+            members={options.members}
+            columns={columns}
+          />
+          <Pagination
+            page={filters.page}
+            pageSize={PAGE_SIZE}
+            total={result.total}
+            basePath={basePath}
+            searchParams={linkParams}
+          />
         </>
       )}
     </>

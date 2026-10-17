@@ -22,62 +22,95 @@ const DETAIL_SELECT = `*,
 export type TaskDetail = Awaited<ReturnType<typeof getTaskDetail>>;
 
 export async function getTaskDetail(supabase: ServerSupabase, viewer: Viewer, key: string) {
-  const { data: task, error } = await supabase.from("tasks").select(DETAIL_SELECT).eq("key", key.toUpperCase()).maybeSingle();
+  const { data: task, error } = await supabase
+    .from("tasks")
+    .select(DETAIL_SELECT)
+    .eq("key", key.toUpperCase())
+    .maybeSingle();
   if (error) throw new Error(`Could not load task: ${error.message}`);
   if (!task) return null;
 
-  const [subtasks, blockedBy, blocking, comments, attachments, activity, assignments, managed, depts, projectRole, parent] =
-    await Promise.all([
-      supabase
-        .from("tasks")
-        .select("id, key, title, status, priority, progress, assignee:profiles!tasks_assignee_profile_fkey(id, full_name, email)")
-        .eq("parent_id", task.id)
-        .is("archived_at", null)
-        .order("number"),
-      supabase
-        .from("task_dependencies")
-        .select("depends_on_task_id, task:tasks!task_dependencies_workspace_id_depends_on_task_id_fkey(id, key, title, status)")
-        .eq("task_id", task.id),
-      supabase
-        .from("task_dependencies")
-        .select("task_id, task:tasks!task_dependencies_workspace_id_task_id_fkey(id, key, title, status)")
-        .eq("depends_on_task_id", task.id),
-      supabase
-        .from("task_comments")
-        .select("id, body, created_at, edited_at, deleted_at, mentioned_user_ids, author:profiles!task_comments_author_id_fkey(id, full_name, email)")
-        .eq("task_id", task.id)
-        .order("created_at"),
-      supabase
-        .from("task_attachments")
-        .select("id, file_name, mime_type, size_bytes, created_at, uploaded_by, uploader:profiles!task_attachments_uploaded_by_fkey(id, full_name, email)")
-        .eq("task_id", task.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("activity_events")
-        .select("id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email)")
-        .eq("task_id", task.id)
-        .order("created_at")
-        .limit(500),
-      supabase
-        .from("task_assignments")
-        .select(
-          "id, changed_at, note, previous:profiles!task_assignments_previous_assignee_id_fkey(id, full_name, email), next:profiles!task_assignments_new_assignee_id_fkey(id, full_name, email), by:profiles!task_assignments_changed_by_fkey(id, full_name, email)",
-        )
-        .eq("task_id", task.id)
-        .order("changed_at"),
-      supabase.from("departments").select("id").eq("manager_id", viewer.id),
-      supabase
-        .from("workspace_members")
-        .select("user_id, department_id")
-        .eq("workspace_id", viewer.workspaceId)
-        .in("user_id", [task.creator_id, task.assignee_id].filter((x): x is string => !!x)),
-      task.project_id
-        ? supabase.from("project_members").select("role").eq("project_id", task.project_id).eq("user_id", viewer.id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      task.parent_id
-        ? supabase.from("tasks").select("id, key, title, status").eq("id", task.parent_id).maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+  const [
+    subtasks,
+    blockedBy,
+    blocking,
+    comments,
+    attachments,
+    activity,
+    assignments,
+    managed,
+    depts,
+    projectRole,
+    parent,
+  ] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select(
+        "id, key, title, status, priority, progress, assignee:profiles!tasks_assignee_profile_fkey(id, full_name, email)",
+      )
+      .eq("parent_id", task.id)
+      .is("archived_at", null)
+      .order("number"),
+    supabase
+      .from("task_dependencies")
+      .select(
+        "depends_on_task_id, task:tasks!task_dependencies_workspace_id_depends_on_task_id_fkey(id, key, title, status)",
+      )
+      .eq("task_id", task.id),
+    supabase
+      .from("task_dependencies")
+      .select("task_id, task:tasks!task_dependencies_workspace_id_task_id_fkey(id, key, title, status)")
+      .eq("depends_on_task_id", task.id),
+    supabase
+      .from("task_comments")
+      .select(
+        "id, body, created_at, edited_at, deleted_at, mentioned_user_ids, author:profiles!task_comments_author_id_fkey(id, full_name, email)",
+      )
+      .eq("task_id", task.id)
+      .order("created_at"),
+    supabase
+      .from("task_attachments")
+      .select(
+        "id, file_name, mime_type, size_bytes, created_at, uploaded_by, uploader:profiles!task_attachments_uploaded_by_fkey(id, full_name, email)",
+      )
+      .eq("task_id", task.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("activity_events")
+      .select(
+        "id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email)",
+      )
+      .eq("task_id", task.id)
+      .order("created_at")
+      .limit(500),
+    supabase
+      .from("task_assignments")
+      .select(
+        "id, changed_at, note, previous:profiles!task_assignments_previous_assignee_id_fkey(id, full_name, email), next:profiles!task_assignments_new_assignee_id_fkey(id, full_name, email), by:profiles!task_assignments_changed_by_fkey(id, full_name, email)",
+      )
+      .eq("task_id", task.id)
+      .order("changed_at"),
+    supabase.from("departments").select("id").eq("manager_id", viewer.id),
+    supabase
+      .from("workspace_members")
+      .select("user_id, department_id")
+      .eq("workspace_id", viewer.workspaceId)
+      .in(
+        "user_id",
+        [task.creator_id, task.assignee_id].filter((x): x is string => !!x),
+      ),
+    task.project_id
+      ? supabase
+          .from("project_members")
+          .select("role")
+          .eq("project_id", task.project_id)
+          .eq("user_id", viewer.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    task.parent_id
+      ? supabase.from("tasks").select("id, key, title, status").eq("id", task.parent_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
   const deptOf = (uid: string | null) => depts.data?.find((d) => d.user_id === uid)?.department_id ?? null;
   const permViewer: PermissionViewer = {
@@ -87,9 +120,7 @@ export async function getTaskDetail(supabase: ServerSupabase, viewer: Viewer, ke
     managedDepartmentIds: (managed.data ?? []).map((d) => d.id),
     assignmentPolicy: viewer.settings.assignment_policy,
   };
-  const collaborators = (task.task_collaborators ?? [])
-    .map((c) => c.profile)
-    .filter((p): p is Person => p !== null);
+  const collaborators = (task.task_collaborators ?? []).map((c) => c.profile).filter((p): p is Person => p !== null);
   const permissions = taskPermissions(permViewer, {
     creator_id: task.creator_id,
     assignee_id: task.assignee_id,

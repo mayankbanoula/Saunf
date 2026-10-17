@@ -49,8 +49,12 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
   const rawDate = one(sp.date);
   const anchor = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? parseISO(rawDate) : parseISO(ctx.today);
 
-  const rangeStart = mode === "month" ? startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 }) : startOfWeek(anchor, { weekStartsOn: 1 });
-  const rangeEnd = mode === "month" ? endOfWeek(endOfMonth(anchor), { weekStartsOn: 1 }) : endOfWeek(anchor, { weekStartsOn: 1 });
+  const rangeStart =
+    mode === "month"
+      ? startOfWeek(startOfMonth(anchor), { weekStartsOn: 1 })
+      : startOfWeek(anchor, { weekStartsOn: 1 });
+  const rangeEnd =
+    mode === "month" ? endOfWeek(endOfMonth(anchor), { weekStartsOn: 1 }) : endOfWeek(anchor, { weekStartsOn: 1 });
   const days: Date[] = [];
   for (let d = rangeStart; d <= rangeEnd; d = addDays(d, 1)) days.push(d);
 
@@ -87,7 +91,10 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
   };
   const prev = mode === "month" ? addMonths(anchor, -1) : addWeeks(anchor, -1);
   const next = mode === "month" ? addMonths(anchor, 1) : addWeeks(anchor, 1);
-  const title = mode === "month" ? format(anchor, "MMMM yyyy") : `${format(rangeStart, "d MMM")} – ${format(rangeEnd, "d MMM yyyy")}`;
+  const title =
+    mode === "month"
+      ? format(anchor, "MMMM yyyy")
+      : `${format(rangeStart, "d MMM")} – ${format(rangeEnd, "d MMM yyyy")}`;
 
   return (
     <>
@@ -131,7 +138,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
         <p className="mb-2 text-xs text-muted-foreground">Showing the first {MAX_TASKS} tasks in this range.</p>
       ) : null}
 
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className="relative overflow-x-auto rounded-lg border bg-card">
         <div className="grid min-w-[720px] grid-cols-7">
           {days.slice(0, 7).map((d) => (
             <div key={d.toISOString()} className="border-b px-2 py-1.5 text-xs font-medium text-muted-foreground">

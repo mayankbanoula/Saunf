@@ -12,7 +12,11 @@ async function Invitations() {
   await requireRole(["admin"]);
   const supabase = await createClient();
   const [{ data, error }, { data: departments }] = await Promise.all([
-    supabase.from("invitations").select("id, email, full_name, role, status, created_at, accepted_at, invited_by").order("created_at", { ascending: false }).limit(200),
+    supabase
+      .from("invitations")
+      .select("id, email, full_name, role, status, created_at, accepted_at, invited_by")
+      .order("created_at", { ascending: false })
+      .limit(200),
     supabase.from("departments").select("id, name").order("name"),
   ]);
   if (error) throw new Error(`Could not load invitations: ${error.message}`);

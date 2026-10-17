@@ -55,7 +55,13 @@ export function formatDueDate(dueDate: string, dueTime?: string | null, today?: 
 
 /** Inclusive start / exclusive end ISO timestamps for a YYYY-MM-DD range in a timezone. */
 export function dateRangeToTimestamps(from: string, to: string, timezone: string) {
-  const start = new TZDate(`${from}T00:00:00`, timezone);
-  const end = new TZDate(`${addDaysIso(to, 1)}T00:00:00`, timezone);
-  return { fromTs: start.toISOString(), toTs: end.toISOString() };
+  // Build from components: parsing "YYYY-MM-DDT00:00" would use the server's zone, not `timezone`.
+  const midnight = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new TZDate(y, m - 1, d, 0, 0, 0, timezone);
+  };
+  const start = midnight(from);
+  const end = midnight(addDaysIso(to, 1));
+  // Normalise to UTC ("…Z"); TZDate#toISOString keeps the zone offset.
+  return { fromTs: new Date(start.getTime()).toISOString(), toTs: new Date(end.getTime()).toISOString() };
 }

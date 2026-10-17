@@ -10,20 +10,14 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
     <input
       type={type}
       data-slot="input"
-      className={cn(
-        fieldBase,
-        "h-9 py-1 file:border-0 file:bg-transparent file:text-sm file:font-medium",
-        className,
-      )}
+      className={cn(fieldBase, "h-9 py-1 file:border-0 file:bg-transparent file:text-sm file:font-medium", className)}
       {...props}
     />
   );
 }
 
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
-  return (
-    <textarea data-slot="textarea" className={cn(fieldBase, "min-h-20 py-2", className)} {...props} />
-  );
+  return <textarea data-slot="textarea" className={cn(fieldBase, "min-h-20 py-2", className)} {...props} />;
 }
 
 function NativeSelect({ className, ...props }: React.ComponentProps<"select">) {

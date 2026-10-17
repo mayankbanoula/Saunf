@@ -7,7 +7,12 @@ import { dbErrorMessage, fail, ok, runAction, validationFailure, type ActionResu
 import { viewerForAction } from "@/lib/auth/session";
 import { publicEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
-import { passwordChangeSchema, profileSchema, type PasswordChangeInput, type ProfileInput } from "@/lib/validation/profile";
+import {
+  passwordChangeSchema,
+  profileSchema,
+  type PasswordChangeInput,
+  type ProfileInput,
+} from "@/lib/validation/profile";
 
 export async function updateProfile(input: ProfileInput): Promise<ActionResult> {
   return runAction(async () => {

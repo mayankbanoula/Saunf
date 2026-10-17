@@ -6,8 +6,7 @@ import type { z } from "zod";
 import { ActionError } from "@/lib/auth/session";
 
 export type ActionResult<T = null> =
-  | { ok: true; data: T }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
+  { ok: true; data: T } | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
 
 export function ok<T>(data: T): ActionResult<T> {
   return { ok: true, data };
@@ -35,9 +34,7 @@ export function dbErrorMessage(error: PostgrestError | { message: string; code?:
   const code = "code" in error ? error.code : undefined;
   switch (code) {
     case "42501":
-      return error.message.includes("row-level security")
-        ? "You do not have permission to do that."
-        : error.message;
+      return error.message.includes("row-level security") ? "You do not have permission to do that." : error.message;
     case "23514":
     case "22023":
     case "P0002":

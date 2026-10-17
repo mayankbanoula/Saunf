@@ -14,8 +14,15 @@ export const SORT_COLUMN: Record<SortField, string> = {
 };
 
 const idOrKeyword = (keywords: string[]) =>
-  z.union([z.uuid(), z.enum(keywords as [string, ...string[]])]).optional().catch(undefined);
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().catch(undefined);
+  z
+    .union([z.uuid(), z.enum(keywords as [string, ...string[]])])
+    .optional()
+    .catch(undefined);
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .optional()
+  .catch(undefined);
 
 function csvEnum<T extends string>(values: readonly T[]) {
   return z

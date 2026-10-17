@@ -41,7 +41,9 @@ export async function inviteMember(input: InviteInput): Promise<ActionResult<{ m
       .select("id")
       .single();
     if (error) {
-      return fail(error.code === "23505" ? "There's already a pending invitation for that email." : dbErrorMessage(error));
+      return fail(
+        error.code === "23505" ? "There's already a pending invitation for that email." : dbErrorMessage(error),
+      );
     }
 
     // 2) Create the auth user (service role). The on_auth_user_created trigger turns the
@@ -49,7 +51,12 @@ export async function inviteMember(input: InviteInput): Promise<ActionResult<{ m
     const admin = createAdminClient();
     const result =
       mode === "password"
-        ? await admin.auth.admin.createUser({ email, password: password!, email_confirm: true, user_metadata: { full_name } })
+        ? await admin.auth.admin.createUser({
+            email,
+            password: password!,
+            email_confirm: true,
+            user_metadata: { full_name },
+          })
         : await admin.auth.admin.inviteUserByEmail(email, {
             redirectTo: `${publicEnv.siteUrl}/auth/confirm?next=/set-password`,
             data: { full_name },
@@ -77,7 +84,11 @@ export async function resendInvitation(invitationId: string): Promise<ActionResu
     const id = z.uuid().safeParse(invitationId);
     if (!id.success) return fail("Invalid invitation.");
     const supabase = await createClient();
-    const { data: inv } = await supabase.from("invitations").select("email, full_name, status").eq("id", id.data).maybeSingle();
+    const { data: inv } = await supabase
+      .from("invitations")
+      .select("email, full_name, status")
+      .eq("id", id.data)
+      .maybeSingle();
     if (!inv || inv.status !== "pending") return fail("Only pending invitations can be resent.");
     // Supabase Auth re-sends the invitation email for a user who hasn't accepted yet.
     const admin = createAdminClient();
@@ -117,11 +128,9 @@ export async function revokeInvitation(invitationId: string): Promise<ActionResu
       await supabase.from("workspace_members").update({ is_active: false }).eq("user_id", inv.accepted_user_id);
       const admin = createAdminClient();
       const { data: user } = await admin.auth.admin.getUserById(inv.accepted_user_id);
-      if (user.user && !user.user.last_sign_in_at) {
-        await admin.auth.admin.deleteUser(inv.accepted_user_id);
-      } else {
-        await admin.auth.admin.updateUserById(inv.accepted_user_id, { ban_duration: BAN_FOREVER });
-      }
+      const neverUsed = user.user && !user.user.last_sign_in_at;
+      const deleted = neverUsed ? !(await admin.auth.admin.deleteUser(inv.accepted_user_id)).error : false;
+      if (!deleted) await admin.auth.admin.updateUserById(inv.accepted_user_id, { ban_duration: BAN_FOREVER });
     }
     refresh();
     return ok(null);
@@ -195,11 +204,16 @@ export async function saveDepartment(input: DepartmentInput, departmentId?: stri
     const parsed = departmentSchema.safeParse(input);
     if (!parsed.success) return validationFailure(parsed.error);
     const supabase = await createClient();
-    const values = { ...parsed.data, manager_id: parsed.data.manager_id ?? null, description: parsed.data.description || null };
+    const values = {
+      ...parsed.data,
+      manager_id: parsed.data.manager_id ?? null,
+      description: parsed.data.description || null,
+    };
     const { error } = departmentId
       ? await supabase.from("departments").update(values).eq("id", departmentId)
       : await supabase.from("departments").insert({ ...values, workspace_id: viewer.workspaceId });
-    if (error) return fail(error.code === "23505" ? "A department with that name already exists." : dbErrorMessage(error));
+    if (error)
+      return fail(error.code === "23505" ? "A department with that name already exists." : dbErrorMessage(error));
     refresh();
     return ok(null);
   });

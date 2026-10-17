@@ -59,7 +59,11 @@ export async function setProjectArchived(projectId: string, archived: boolean): 
   });
 }
 
-export async function addProjectMember(projectId: string, userId: string, role: "lead" | "member"): Promise<ActionResult> {
+export async function addProjectMember(
+  projectId: string,
+  userId: string,
+  role: "lead" | "member",
+): Promise<ActionResult> {
   return runAction(async () => {
     const viewer = await viewerForAction();
     const parsed = z

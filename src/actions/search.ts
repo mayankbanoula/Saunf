@@ -39,12 +39,7 @@ export async function globalSearch(rawQuery: string, limit = 6): Promise<ActionR
         .eq("is_active", true)
         .or(`full_name.ilike.${pgrstQuote(term)},email.ilike.${pgrstQuote(term)}`, { referencedTable: "profiles" })
         .limit(n),
-      supabase
-        .from("projects")
-        .select("id, name, status")
-        .ilike("name", term)
-        .is("archived_at", null)
-        .limit(n),
+      supabase.from("projects").select("id, name, status").ilike("name", term).is("archived_at", null).limit(n),
       supabase.from("labels").select("id, name, color").ilike("name", term).limit(n),
     ]);
     if (tasks.error || members.error || projects.error || labels.error) {

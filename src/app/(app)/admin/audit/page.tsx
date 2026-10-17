@@ -16,7 +16,15 @@ export const metadata: Metadata = { title: "Admin · Audit log" };
 const PAGE = 100;
 const GROUPS: Record<string, string[] | null> = {
   all: null,
-  members: ["member_joined", "member_role_changed", "member_department_changed", "member_deactivated", "member_reactivated", "invitation_sent", "invitation_revoked"],
+  members: [
+    "member_joined",
+    "member_role_changed",
+    "member_department_changed",
+    "member_deactivated",
+    "member_reactivated",
+    "invitation_sent",
+    "invitation_revoked",
+  ],
   settings: ["settings_updated", "department_created", "department_updated", "department_deleted"],
   assignments: ["task_assigned", "task_reassigned", "task_unassigned"],
   lifecycle: ["task_created", "task_completed", "task_reopened", "task_archived", "task_restored"],
@@ -35,7 +43,9 @@ async function Audit({ searchParams }: { searchParams: Promise<SP> }) {
   const supabase = await createClient();
   let query = supabase
     .from("activity_events")
-    .select("id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title)")
+    .select(
+      "id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title)",
+    )
     .eq("workspace_id", viewer.workspaceId)
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE);
@@ -43,11 +53,15 @@ async function Audit({ searchParams }: { searchParams: Promise<SP> }) {
   if (actor && /^[0-9a-f-]{36}$/.test(actor)) query = query.eq("actor_id", actor);
   const [{ data, error }, { data: members }] = await Promise.all([
     query,
-    supabase.from("workspace_members").select("user_id, profiles!workspace_members_user_id_fkey(full_name, email)").eq("workspace_id", viewer.workspaceId),
+    supabase
+      .from("workspace_members")
+      .select("user_id, profiles!workspace_members_user_id_fkey(full_name, email)")
+      .eq("workspace_id", viewer.workspaceId),
   ]);
   if (error) throw new Error(`Could not load the audit log: ${error.message}`);
   const rows = (data ?? []) as unknown as ActivityEvent[];
-  const link = (p: number) => `/admin/audit?${new URLSearchParams({ group, ...(actor ? { actor } : {}), page: String(p) })}`;
+  const link = (p: number) =>
+    `/admin/audit?${new URLSearchParams({ group, ...(actor ? { actor } : {}), page: String(p) })}`;
 
   return (
     <>
@@ -71,7 +85,9 @@ async function Audit({ searchParams }: { searchParams: Promise<SP> }) {
         <Button size="sm" variant="outline" type="submit">
           Apply
         </Button>
-        <p className="ml-auto text-xs text-muted-foreground">Audit history is append-only; it can&apos;t be edited or deleted from the app.</p>
+        <p className="ml-auto text-xs text-muted-foreground">
+          Audit history is append-only; it can&apos;t be edited or deleted from the app.
+        </p>
       </form>
       <Card>
         <CardContent className="pt-5 pl-9">

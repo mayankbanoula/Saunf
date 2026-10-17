@@ -32,6 +32,24 @@ const QuickCreateContext = React.createContext<(defaults?: Parameters<typeof Tas
 export const useQuickCreate = () => React.useContext(QuickCreateContext);
 
 const COLLAPSE_KEY = "saunf.sidebar.collapsed";
+const COLLAPSE_EVENT = "saunf:sidebar";
+
+// Sidebar collapse is a per-browser UI preference (not application data).
+function subscribeCollapsed(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(COLLAPSE_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(COLLAPSE_EVENT, callback);
+  };
+}
+function readCollapsed() {
+  try {
+    return window.localStorage.getItem(COLLAPSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 export function AppShell({
   viewer,
@@ -43,26 +61,21 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = React.useState(false);
+  const collapsed = React.useSyncExternalStore(subscribeCollapsed, readCollapsed, () => false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [seenPath, setSeenPath] = React.useState(pathname);
+  if (seenPath !== pathname) {
+    setSeenPath(pathname);
+    setMobileOpen(false);
+  }
   const [createOpen, setCreateOpen] = React.useState(false);
   const [createDefaults, setCreateDefaults] = React.useState<Parameters<typeof TaskFormDialog>[0]["defaults"]>();
 
-  React.useEffect(() => {
-    // UI preference only (not application data).
-    try {
-      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1");
-    } catch {}
-  }, []);
-  React.useEffect(() => setMobileOpen(false), [pathname]);
-
   const toggleCollapsed = () => {
-    setCollapsed((c) => {
-      try {
-        window.localStorage.setItem(COLLAPSE_KEY, c ? "0" : "1");
-      } catch {}
-      return !c;
-    });
+    try {
+      window.localStorage.setItem(COLLAPSE_KEY, collapsed ? "0" : "1");
+    } catch {}
+    window.dispatchEvent(new Event(COLLAPSE_EVENT));
   };
 
   const openCreate = React.useCallback((defaults?: Parameters<typeof TaskFormDialog>[0]["defaults"]) => {
@@ -92,7 +105,13 @@ export function AppShell({
           <SidebarNav pathname={pathname} role={viewer.role} collapsed={collapsed} />
           {collapsed ? (
             <div className="border-t p-2">
-              <Button variant="ghost" size="icon" onClick={toggleCollapsed} aria-label="Expand sidebar" className="w-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleCollapsed}
+                aria-label="Expand sidebar"
+                className="w-full"
+              >
                 <PanelLeftOpenIcon />
               </Button>
             </div>
@@ -126,7 +145,7 @@ export function AppShell({
               <MenuIcon />
             </Button>
             <GlobalSearch />
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {viewer.canCreate ? (
                 <Button size="sm" onClick={() => openCreate()} aria-label="Create task">
                   <PlusIcon />

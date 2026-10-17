@@ -422,7 +422,14 @@ export async function addDependency(taskId: string, dependsOnKey: string): Promi
   return runAction(async () => {
     await viewerForAction();
     const parsed = z
-      .object({ taskId: z.uuid(), key: z.string().trim().toUpperCase().regex(/^[A-Z]{2,6}-\d+$/, "Enter a task ID like SAU-00012") })
+      .object({
+        taskId: z.uuid(),
+        key: z
+          .string()
+          .trim()
+          .toUpperCase()
+          .regex(/^[A-Z]{2,6}-\d+$/, "Enter a task ID like SAU-00012"),
+      })
       .safeParse({ taskId, key: dependsOnKey });
     if (!parsed.success) return validationFailure(parsed.error);
     const supabase = await createClient();

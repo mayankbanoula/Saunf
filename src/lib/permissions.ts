@@ -43,7 +43,10 @@ export type TaskForPermission = {
 
 function inManagerScope(viewer: PermissionViewer, task: TaskForPermission) {
   if (viewer.role !== "manager") return false;
-  const depts = new Set([...(viewer.managedDepartmentIds ?? []), ...(viewer.departmentId ? [viewer.departmentId] : [])]);
+  const depts = new Set([
+    ...(viewer.managedDepartmentIds ?? []),
+    ...(viewer.departmentId ? [viewer.departmentId] : []),
+  ]);
   return [task.department_id, task.creator_department_id, task.assignee_department_id].some(
     (d) => d != null && depts.has(d),
   );
@@ -59,11 +62,7 @@ export function canEditTask(viewer: PermissionViewer, task: TaskForPermission) {
 }
 
 export function canWorkTask(viewer: PermissionViewer, task: TaskForPermission) {
-  return (
-    canEditTask(viewer, task) ||
-    task.assignee_id === viewer.id ||
-    task.collaborator_ids.includes(viewer.id)
-  );
+  return canEditTask(viewer, task) || task.assignee_id === viewer.id || task.collaborator_ids.includes(viewer.id);
 }
 
 export function canReassignTask(viewer: PermissionViewer, task: TaskForPermission) {

@@ -23,7 +23,9 @@ async function Archive({ searchParams }: { searchParams: PageProps<"/admin/archi
 export default function AdminArchivePage({ searchParams }: PageProps<"/admin/archive">) {
   return (
     <>
-      <p className="mb-3 text-sm text-muted-foreground">Select tasks to restore them. Restoring is recorded in each task&apos;s history.</p>
+      <p className="mb-3 text-sm text-muted-foreground">
+        Select tasks to restore them. Restoring is recorded in each task&apos;s history.
+      </p>
       <Suspense fallback={<TaskListSkeleton />}>
         <Archive searchParams={searchParams} />
       </Suspense>

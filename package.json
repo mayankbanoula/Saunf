@@ -17,7 +17,10 @@
     "db:types": "supabase gen types typescript --local > src/lib/database.types.ts",
     "db:push": "supabase db push",
     "bootstrap": "tsx scripts/bootstrap.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run typecheck && npm run format:check && npm run test:unit"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
@@ -49,11 +52,15 @@
     "@playwright/test": "^1.56.1",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^18.0.8",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "pg": "^8.23.1",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "supabase": "^2.121.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",

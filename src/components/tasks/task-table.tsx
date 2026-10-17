@@ -40,7 +40,12 @@ export function TaskTable({
   const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const anyArchived = rows.some((r) => selected.has(r.id) && r.archived_at);
 
-  React.useEffect(() => setSelected(new Set()), [rows]);
+  // New rows (page/filter change or refresh) clear the selection.
+  const [seenRows, setSeenRows] = React.useState(rows);
+  if (seenRows !== rows) {
+    setSeenRows(rows);
+    setSelected(new Set());
+  }
 
   const toggle = (id: string) =>
     setSelected((s) => {
@@ -71,7 +76,9 @@ export function TaskTable({
             className="h-8 w-auto text-sm"
             value=""
             disabled={pending}
-            onChange={(e) => e.target.value && apply({ status: e.target.value as (typeof TASK_STATUSES)[number] }, "Status changed")}
+            onChange={(e) =>
+              e.target.value && apply({ status: e.target.value as (typeof TASK_STATUSES)[number] }, "Status changed")
+            }
           >
             <option value="">Set status…</option>
             {TASK_STATUSES.map((s) => (
@@ -86,7 +93,8 @@ export function TaskTable({
             value=""
             disabled={pending}
             onChange={(e) =>
-              e.target.value && apply({ priority: e.target.value as (typeof TASK_PRIORITIES)[number] }, "Priority changed")
+              e.target.value &&
+              apply({ priority: e.target.value as (typeof TASK_PRIORITIES)[number] }, "Priority changed")
             }
           >
             <option value="">Set priority…</option>
@@ -114,11 +122,21 @@ export function TaskTable({
             ))}
           </NativeSelect>
           {anyArchived ? (
-            <Button size="sm" variant="outline" disabled={pending} onClick={() => apply({ archived: false }, "Restored")}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => apply({ archived: false }, "Restored")}
+            >
               <ArchiveRestoreIcon /> Restore
             </Button>
           ) : (
-            <Button size="sm" variant="outline" disabled={pending} onClick={() => apply({ archived: true }, "Archived")}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => apply({ archived: true }, "Archived")}
+            >
               <ArchiveIcon /> Archive
             </Button>
           )}
@@ -156,15 +174,26 @@ export function TaskTable({
           {rows.map((t) => {
             const labels = t.task_labels.map((tl) => tl.labels).filter((l) => l !== null);
             return (
-              <TableRow key={t.id} data-state={selected.has(t.id) ? "selected" : undefined} className={cn(t.archived_at && "opacity-70")}>
+              <TableRow
+                key={t.id}
+                data-state={selected.has(t.id) ? "selected" : undefined}
+                className={cn(t.archived_at && "opacity-70")}
+              >
                 {bulk ? (
                   <TableCell>
-                    <Checkbox aria-label={`Select ${t.key}`} checked={selected.has(t.id)} onCheckedChange={() => toggle(t.id)} />
+                    <Checkbox
+                      aria-label={`Select ${t.key}`}
+                      checked={selected.has(t.id)}
+                      onCheckedChange={() => toggle(t.id)}
+                    />
                   </TableCell>
                 ) : null}
                 <TableCell className="font-mono text-xs text-muted-foreground">{t.key}</TableCell>
                 <TableCell className="max-w-[22rem] min-w-48">
-                  <Link href={`/tasks/${t.key}`} className="line-clamp-1 font-medium hover:text-primary hover:underline">
+                  <Link
+                    href={`/tasks/${t.key}`}
+                    className="line-clamp-1 font-medium hover:text-primary hover:underline"
+                  >
                     {t.title}
                   </Link>
                   {labels.length || t.is_blocked || t.archived_at ? (

@@ -16,7 +16,9 @@ async function SettingsContent() {
   const supabase = await createClient();
   const [{ data: profile }, { data: dept }] = await Promise.all([
     supabase.from("profiles").select("full_name, job_title, email_notifications").eq("id", viewer.id).single(),
-    viewer.departmentId ? supabase.from("departments").select("name").eq("id", viewer.departmentId).maybeSingle() : Promise.resolve({ data: null }),
+    viewer.departmentId
+      ? supabase.from("departments").select("name").eq("id", viewer.departmentId).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   return (
     <div className="grid max-w-3xl gap-5">

@@ -15,15 +15,28 @@ export const metadata: Metadata = { title: "Search" };
 async function Results({ searchParams }: { searchParams: PageProps<"/search">["searchParams"] }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  if (!q) return <EmptyState icon={SearchIcon} title="Search your workspace" description="Use the search bar (Ctrl/⌘ K) to find tasks, people, projects and labels." />;
+  if (!q)
+    return (
+      <EmptyState
+        icon={SearchIcon}
+        title="Search your workspace"
+        description="Use the search bar (Ctrl/⌘ K) to find tasks, people, projects and labels."
+      />
+    );
   const res = await globalSearch(q, 50);
   if (!res.ok) throw new Error(res.error);
   const { tasks, people, projects, labels } = res.data;
   if (!tasks.length && !people.length && !projects.length && !labels.length) {
-    return <EmptyState icon={SearchIcon} title={`No results for “${q}”`} description="Try a task ID like SAU-00012, part of a title, or a person's name." />;
+    return (
+      <EmptyState
+        icon={SearchIcon}
+        title={`No results for “${q}”`}
+        description="Try a task ID like SAU-00012, part of a title, or a person's name."
+      />
+    );
   }
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <Card>
         <CardHeader>
           <CardTitle>Tasks ({tasks.length})</CardTitle>
@@ -79,7 +92,9 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
                   <Link href={`/projects/${p.id}`} className="truncate hover:underline">
                     {p.name}
                   </Link>
-                  <span className="text-xs text-muted-foreground">{PROJECT_STATUS_LABEL[p.status as ProjectStatus]}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {PROJECT_STATUS_LABEL[p.status as ProjectStatus]}
+                  </span>
                 </li>
               ))}
               {!projects.length ? <li className="text-sm text-muted-foreground">No matching projects.</li> : null}
@@ -93,7 +108,11 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
               {labels.map((l) => (
-                <Link key={l.id} href={`/tasks?label=${l.id}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs hover:bg-muted">
+                <Link
+                  key={l.id}
+                  href={`/tasks?label=${l.id}`}
+                  className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs hover:bg-muted"
+                >
                   <span className="size-2 rounded-full" style={{ background: l.color }} /> {l.name}
                 </Link>
               ))}

@@ -34,11 +34,28 @@ export function TaskBoard({
   nowTime: string;
   truncated: boolean;
 }) {
-  const [tasks, setTasks] = React.useState(rows);
+  // Optimistic moves; when the server action fails (no refreshed props), React reverts them.
+  const [tasks, moveOptimistic] = React.useOptimistic(rows, (state, move: { id: string; to: TaskStatus }) =>
+    state.map((t) =>
+      t.id === move.id
+        ? {
+            ...t,
+            status: move.to,
+            progress:
+              move.to === "done"
+                ? 100
+                : t.status === "done" && t.progress === 100
+                  ? move.to === "todo"
+                    ? 0
+                    : 90
+                  : t.progress,
+          }
+        : t,
+    ),
+  );
+  const [, startTransition] = React.useTransition();
   const [activeId, setActiveId] = React.useState<string | null>(null);
   const dndId = React.useId(); // stable ids across SSR and hydration
-  // Re-sync when the server sends fresh data (after refresh / filter change).
-  React.useEffect(() => setTasks(rows), [rows]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -64,29 +81,18 @@ export function TaskBoard({
     setActiveId(String(e.active.id));
   }
 
-  async function onDragEnd(e: DragEndEvent) {
+  function onDragEnd(e: DragEndEvent) {
     setActiveId(null);
     const id = String(e.active.id);
     const to = e.over?.id as TaskStatus | undefined;
     const task = tasks.find((t) => t.id === id);
     if (!task || !to || task.status === to) return;
-
-    const previous = tasks;
-    // Optimistic update, mirroring the database's completion rules.
-    setTasks((list) =>
-      list.map((t) =>
-        t.id === id
-          ? { ...t, status: to, progress: to === "done" ? 100 : t.status === "done" && t.progress === 100 ? (to === "todo" ? 0 : 90) : t.progress }
-          : t,
-      ),
-    );
-    const res = await setTaskStatus(id, to);
-    if (!res.ok) {
-      setTasks(previous);
-      toast.error(`${task.key}: ${res.error}`);
-    } else {
-      toast.success(`${task.key} moved to ${STATUS_LABEL[to]}`);
-    }
+    startTransition(async () => {
+      moveOptimistic({ id, to });
+      const res = await setTaskStatus(id, to);
+      if (!res.ok) toast.error(`${task.key}: ${res.error}`);
+      else toast.success(`${task.key} moved to ${STATUS_LABEL[to]}`);
+    });
   }
 
   return (
@@ -96,8 +102,14 @@ export function TaskBoard({
           Showing the first {rows.length} matching tasks. Narrow the filters to see the rest.
         </p>
       ) : null}
-      <DndContext id={dndId} sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setActiveId(null)}>
-        <div className="grid auto-cols-[minmax(260px,1fr)] grid-flow-col gap-3 overflow-x-auto pb-2 lg:grid-flow-row lg:grid-cols-4">
+      <DndContext
+        id={dndId}
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => setActiveId(null)}
+      >
+        <div className="relative grid auto-cols-[minmax(260px,1fr)] grid-flow-col gap-3 overflow-x-auto pb-2 lg:grid-flow-row lg:grid-cols-4">
           {TASK_STATUSES.map((status) => (
             <Column key={status} status={status} count={byStatus[status].length}>
               {byStatus[status].map((t) => (
@@ -142,7 +154,17 @@ function DraggableCard({ task, today, nowTime }: { task: TaskListRow; today: str
   );
 }
 
-function Card({ task, today, nowTime, dragging }: { task: TaskListRow; today: string; nowTime: string; dragging?: boolean }) {
+function Card({
+  task,
+  today,
+  nowTime,
+  dragging,
+}: {
+  task: TaskListRow;
+  today: string;
+  nowTime: string;
+  dragging?: boolean;
+}) {
   const labels = task.task_labels.map((tl) => tl.labels).filter((l) => l !== null);
   return (
     <article className={cn("rounded-md border bg-card p-2.5 shadow-xs", dragging && "rotate-1 shadow-lg")}>
@@ -153,7 +175,7 @@ function Card({ task, today, nowTime, dragging }: { task: TaskListRow; today: st
       <Link
         href={`/tasks/${task.key}`}
         className="line-clamp-2 text-sm font-medium hover:text-primary hover:underline"
-        onPointerDown={(e) => e.stopPropagation()}
+        draggable={false}
       >
         {task.title}
       </Link>

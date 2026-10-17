@@ -27,7 +27,11 @@ const taskFields = {
   due_date: optionalDate,
   due_time: optionalTime,
   estimate_hours: z
-    .union([z.coerce.number().positive("Estimate must be positive").max(10000), z.literal("").transform(() => null), z.null()])
+    .union([
+      z.coerce.number().positive("Estimate must be positive").max(10000),
+      z.literal("").transform(() => null),
+      z.null(),
+    ])
     .optional(),
   is_blocked: z.boolean().optional(),
   blocker_description: z.string().trim().max(2000).nullable().optional(),

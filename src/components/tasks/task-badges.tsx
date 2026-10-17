@@ -39,7 +39,11 @@ export function PriorityBadge({
   const Icon = PRIORITY_ICON[priority];
   return (
     <span
-      className={cn("inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap", PRIORITY_TEXT[priority], className)}
+      className={cn(
+        "inline-flex items-center gap-1 text-xs font-medium whitespace-nowrap",
+        PRIORITY_TEXT[priority],
+        className,
+      )}
       title={`${PRIORITY_LABEL[priority]} priority`}
     >
       <Icon className="size-3.5" aria-hidden />

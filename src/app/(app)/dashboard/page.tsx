@@ -11,7 +11,16 @@ import { RangePicker } from "@/components/range-picker";
 import { NewTaskButton } from "@/components/tasks/new-task-button";
 import { DueDate, PriorityBadge, StatusBadge } from "@/components/tasks/task-badges";
 import { RelativeTime } from "@/components/time";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Progress, Skeleton, UserAvatar } from "@/components/ui/primitives";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Progress,
+  Skeleton,
+  UserAvatar,
+} from "@/components/ui/primitives";
 import type { ActivityEvent } from "@/lib/activity";
 import { canCreateTasks, requireViewer } from "@/lib/auth/session";
 import { addDaysIso } from "@/lib/dates";
@@ -83,7 +92,9 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
     supabase.rpc("project_progress"),
     supabase
       .from("tasks")
-      .select("id, key, title, status, priority, due_date, due_time, assignee:profiles!tasks_assignee_profile_fkey(id, full_name, email)")
+      .select(
+        "id, key, title, status, priority, due_date, due_time, assignee:profiles!tasks_assignee_profile_fkey(id, full_name, email)",
+      )
       .is("archived_at", null)
       .neq("status", "done")
       .gte("due_date", ctx.today)
@@ -99,13 +110,17 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
       .limit(8),
     supabase
       .from("activity_events")
-      .select("id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title)")
+      .select(
+        "id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title)",
+      )
       .not("task_id", "is", null)
       .order("created_at", { ascending: false })
       .limit(10),
   ]);
 
-  const firstError = [summaryRes, throughputRes, workloadRes, projectsRes, upcomingRes, recentRes, activityRes].find((r) => r.error)?.error;
+  const firstError = [summaryRes, throughputRes, workloadRes, projectsRes, upcomingRes, recentRes, activityRes].find(
+    (r) => r.error,
+  )?.error;
   if (firstError) throw new Error(`Dashboard failed to load: ${firstError.message}`);
 
   const s = summaryRes.data as unknown as Summary;
@@ -132,11 +147,15 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
       onTrack: Number(w.open_count) - Number(w.overdue_count),
       overdue: Number(w.overdue_count),
     }));
-  const throughput = (throughputRes.data ?? []).map((d) => ({ day: d.day, created: Number(d.created), completed: Number(d.completed) }));
+  const throughput = (throughputRes.data ?? []).map((d) => ({
+    day: d.day,
+    created: Number(d.created),
+    completed: Number(d.completed),
+  }));
   const projects = (projectsRes.data ?? []).filter((p) => p.total > 0 && p.status !== "cancelled");
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
         <Metric label="Open tasks" value={s.open} href="/tasks?open=1" />
         <Metric label="Assigned to me" value={s.assigned_to_me} href="/my-tasks?open=1" />
@@ -153,7 +172,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
         />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
         <Card>
           <CardHeader>
             <div>
@@ -198,7 +217,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <div>
@@ -239,7 +258,10 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
                           {p.name}
                         </Link>
                         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                          {p.done}/{p.total} · {pct}%{Number(p.overdue) > 0 ? <span className="text-destructive"> · {p.overdue} overdue</span> : null}
+                          {p.done}/{p.total} · {pct}%
+                          {Number(p.overdue) > 0 ? (
+                            <span className="text-destructive"> · {p.overdue} overdue</span>
+                          ) : null}
                         </span>
                       </div>
                       <Progress value={pct} aria-label={`${p.name} ${pct}% complete`} />
@@ -254,7 +276,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Recently updated</CardTitle>
@@ -310,7 +332,7 @@ function DashboardSkeleton() {
           <Skeleton key={i} className="h-20" />
         ))}
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Skeleton className="h-80" />
         <Skeleton className="h-80" />
       </div>

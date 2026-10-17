@@ -1,13 +1,27 @@
 "use client";
 
-import { ArchiveIcon, ArchiveRestoreIcon, CheckCircle2Icon, Loader2Icon, PencilIcon, RotateCcwIcon } from "lucide-react";
+import {
+  ArchiveIcon,
+  ArchiveRestoreIcon,
+  CheckCircle2Icon,
+  Loader2Icon,
+  PencilIcon,
+  RotateCcwIcon,
+} from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
 import { setTaskArchived, setTaskStatus } from "@/actions/tasks";
 import { TaskFormDialog, type EditableTask } from "@/components/tasks/task-form-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Permissions = { edit: boolean; work: boolean; archive: boolean; restore: boolean };
 
@@ -29,11 +43,20 @@ export function TaskActions({ task, permissions }: { task: EditableTask; permiss
     <>
       {permissions.work ? (
         done ? (
-          <Button variant="outline" size="sm" disabled={pending} onClick={() => run(() => setTaskStatus(task.id, "in_progress"), `${task.key} reopened`)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() => run(() => setTaskStatus(task.id, "in_progress"), `${task.key} reopened`)}
+          >
             <RotateCcwIcon /> Reopen
           </Button>
         ) : (
-          <Button size="sm" disabled={pending} onClick={() => run(() => setTaskStatus(task.id, "done"), `${task.key} completed`)}>
+          <Button
+            size="sm"
+            disabled={pending}
+            onClick={() => run(() => setTaskStatus(task.id, "done"), `${task.key} completed`)}
+          >
             <CheckCircle2Icon /> Complete
           </Button>
         )
@@ -49,7 +72,12 @@ export function TaskActions({ task, permissions }: { task: EditableTask; permiss
         </Button>
       ) : null}
       {permissions.restore ? (
-        <Button variant="outline" size="sm" disabled={pending} onClick={() => run(() => setTaskArchived(task.id, false), `${task.key} restored`)}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={pending}
+          onClick={() => run(() => setTaskArchived(task.id, false), `${task.key} restored`)}
+        >
           <ArchiveRestoreIcon /> Restore
         </Button>
       ) : null}

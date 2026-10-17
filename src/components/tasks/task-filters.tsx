@@ -17,7 +17,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -220,7 +219,11 @@ export function TaskFilters({ options, hide = {} }: { options: FilterOptions; hi
           <PopoverContent className="w-80" align="start">
             <div className="grid gap-3">
               {!hide.creator ? (
-                <FilterSelect label="Creator" value={params.get("creator") ?? ""} onChange={(v) => setParams({ creator: v })}>
+                <FilterSelect
+                  label="Creator"
+                  value={params.get("creator") ?? ""}
+                  onChange={(v) => setParams({ creator: v })}
+                >
                   <option value="">Anyone</option>
                   <option value="me">Me</option>
                   {options.members.map((m) => (
@@ -230,7 +233,11 @@ export function TaskFilters({ options, hide = {} }: { options: FilterOptions; hi
                   ))}
                 </FilterSelect>
               ) : null}
-              <FilterSelect label="Department" value={params.get("department") ?? ""} onChange={(v) => setParams({ department: v })}>
+              <FilterSelect
+                label="Department"
+                value={params.get("department") ?? ""}
+                onChange={(v) => setParams({ department: v })}
+              >
                 <option value="">Any department</option>
                 {options.departments.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -265,7 +272,11 @@ export function TaskFilters({ options, hide = {} }: { options: FilterOptions; hi
                 onChange={(from, to) => setParams({ completed_from: from, completed_to: to })}
               />
               {!hide.archived ? (
-                <FilterSelect label="Archived" value={params.get("archived") ?? ""} onChange={(v) => setParams({ archived: v })}>
+                <FilterSelect
+                  label="Archived"
+                  value={params.get("archived") ?? ""}
+                  onChange={(v) => setParams({ archived: v })}
+                >
                   <option value="">Hide archived</option>
                   <option value="include">Include archived</option>
                   <option value="only">Only archived</option>
@@ -388,8 +399,20 @@ function DateRange({
     <fieldset className="grid gap-1.5">
       <legend className="mb-1.5 text-xs font-medium">{label}</legend>
       <div className="grid grid-cols-2 gap-2">
-        <Input type="date" aria-label={`${label} from`} className="h-8 text-sm" value={from} onChange={(e) => onChange(e.target.value || null, to || null)} />
-        <Input type="date" aria-label={`${label} to`} className="h-8 text-sm" value={to} onChange={(e) => onChange(from || null, e.target.value || null)} />
+        <Input
+          type="date"
+          aria-label={`${label} from`}
+          className="h-8 text-sm"
+          value={from}
+          onChange={(e) => onChange(e.target.value || null, to || null)}
+        />
+        <Input
+          type="date"
+          aria-label={`${label} to`}
+          className="h-8 text-sm"
+          value={to}
+          onChange={(e) => onChange(from || null, e.target.value || null)}
+        />
       </div>
     </fieldset>
   );

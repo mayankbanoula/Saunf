@@ -14,7 +14,9 @@ async function Members() {
   const [{ data: members, error }, { data: departments }, { data: pending }] = await Promise.all([
     supabase
       .from("workspace_members")
-      .select("user_id, role, department_id, is_active, joined_at, profiles!workspace_members_user_id_fkey(full_name, email, job_title)")
+      .select(
+        "user_id, role, department_id, is_active, joined_at, profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
+      )
       .eq("workspace_id", viewer.workspaceId)
       .order("joined_at"),
     supabase.from("departments").select("id, name").order("name"),
@@ -33,14 +35,18 @@ async function Members() {
     joined_at: m.joined_at,
     pending_invite: pendingIds.has(m.user_id),
   }));
-  rows.sort((a, b) => Number(b.is_active) - Number(a.is_active) || (a.full_name || a.email).localeCompare(b.full_name || b.email));
+  rows.sort(
+    (a, b) =>
+      Number(b.is_active) - Number(a.is_active) || (a.full_name || a.email).localeCompare(b.full_name || b.email),
+  );
   const active = rows.filter((r) => r.is_active).length;
 
   return (
     <>
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          {active} active · {rows.length - active} deactivated. Deactivated members lose all access immediately and can&apos;t sign in.
+          {active} active · {rows.length - active} deactivated. Deactivated members lose all access immediately and
+          can&apos;t sign in.
         </p>
         <InviteButton departments={departments ?? []} />
       </div>

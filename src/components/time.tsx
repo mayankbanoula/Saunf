@@ -18,13 +18,25 @@ function fallback(iso: string) {
 }
 
 /** Absolute local date/time, e.g. "Today, 10:30 AM" or "3 Oct, 4:20 PM". */
-export function LocalDateTime({ iso, className, dateOnly = false }: { iso: string; className?: string; dateOnly?: boolean }) {
+export function LocalDateTime({
+  iso,
+  className,
+  dateOnly = false,
+}: {
+  iso: string;
+  className?: string;
+  dateOnly?: boolean;
+}) {
   const client = useIsClient();
   const d = new Date(iso);
   let label = fallback(iso);
   if (client) {
     const time = format(d, "h:mm a");
-    const day = isToday(d) ? "Today" : isYesterday(d) ? "Yesterday" : format(d, isSameYear(d, new Date()) ? "d MMM" : "d MMM yyyy");
+    const day = isToday(d)
+      ? "Today"
+      : isYesterday(d)
+        ? "Yesterday"
+        : format(d, isSameYear(d, new Date()) ? "d MMM" : "d MMM yyyy");
     label = dateOnly ? day : `${day}, ${time}`;
   }
   return (

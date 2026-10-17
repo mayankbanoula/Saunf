@@ -10,12 +10,7 @@ export function LogoMark({ className }: { className?: string }) {
         fill="var(--highlight)"
       />
       <path d="M16 9.5v14" stroke="var(--primary)" strokeWidth="1.6" strokeLinecap="round" />
-      <path
-        d="M16 14.2l-2.6-2M16 18l2.8-2.3"
-        stroke="var(--primary)"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
+      <path d="M16 14.2l-2.6-2M16 18l2.8-2.3" stroke="var(--primary)" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }

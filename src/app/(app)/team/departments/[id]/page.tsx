@@ -21,7 +21,11 @@ async function DepartmentContent({ params, searchParams }: PageProps<"/team/depa
   const viewer = await requireViewer();
   const supabase = await createClient();
   const [{ data: dept }, { data: members }, { data: workload }] = await Promise.all([
-    supabase.from("departments").select("id, name, description, manager:profiles!departments_manager_id_fkey(id, full_name, email)").eq("id", id).maybeSingle(),
+    supabase
+      .from("departments")
+      .select("id, name, description, manager:profiles!departments_manager_id_fkey(id, full_name, email)")
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("workspace_members")
       .select("user_id, role, profiles!workspace_members_user_id_fkey(full_name, email, job_title)")
@@ -36,7 +40,11 @@ async function DepartmentContent({ params, searchParams }: PageProps<"/team/depa
   const chart = people
     .map((p) => {
       const w = load.get(p.id);
-      return { name: displayName(p), onTrack: Number(w?.open_count ?? 0) - Number(w?.overdue_count ?? 0), overdue: Number(w?.overdue_count ?? 0) };
+      return {
+        name: displayName(p),
+        onTrack: Number(w?.open_count ?? 0) - Number(w?.overdue_count ?? 0),
+        overdue: Number(w?.overdue_count ?? 0),
+      };
     })
     .filter((r) => r.onTrack + r.overdue > 0);
 
@@ -47,7 +55,7 @@ async function DepartmentContent({ params, searchParams }: PageProps<"/team/depa
         title={dept.name}
         description={dept.description || (dept.manager ? `Managed by ${displayName(dept.manager)}` : undefined)}
       />
-      <div className="mb-5 grid gap-4 lg:grid-cols-[20rem_1fr]">
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-[20rem_minmax(0,1fr)]">
         <Card>
           <CardHeader>
             <CardTitle>Members ({people.length})</CardTitle>
@@ -74,13 +82,22 @@ async function DepartmentContent({ params, searchParams }: PageProps<"/team/depa
             <CardTitle>Workload</CardTitle>
           </CardHeader>
           <CardContent>
-            {chart.length ? <WorkloadChart data={chart} /> : <p className="py-6 text-center text-sm text-muted-foreground">No open assigned tasks.</p>}
+            {chart.length ? (
+              <WorkloadChart data={chart} />
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">No open assigned tasks.</p>
+            )}
           </CardContent>
         </Card>
       </div>
       <h2 className="mb-3 text-sm font-semibold">Department tasks</h2>
       <Suspense fallback={<TaskListSkeleton />}>
-        <TaskListView searchParams={searchParams} basePath={`/team/departments/${id}`} overrides={{ department: id }} emptyTitle="No tasks for this department" />
+        <TaskListView
+          searchParams={searchParams}
+          basePath={`/team/departments/${id}`}
+          overrides={{ department: id }}
+          emptyTitle="No tasks for this department"
+        />
       </Suspense>
     </>
   );

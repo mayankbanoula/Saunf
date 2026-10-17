@@ -2,7 +2,9 @@ import { z } from "zod";
 
 import { PROJECT_STATUSES } from "@/lib/tasks/constants";
 
-const optionalDate = z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("").transform(() => null), z.null()]).optional();
+const optionalDate = z
+  .union([z.string().regex(/^\d{4}-\d{2}-\d{2}$/), z.literal("").transform(() => null), z.null()])
+  .optional();
 
 export const projectSchema = z
   .object({

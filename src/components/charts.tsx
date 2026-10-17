@@ -85,8 +85,25 @@ export function WorkloadChart({ data }: { data: { name: string; onTrack: number;
           <YAxis type="category" dataKey="name" tick={axisTick} tickLine={false} axisLine={false} width={110} />
           <Tooltip {...tooltipStyle} cursor={{ fill: "var(--muted)" }} />
           <Legend wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }} />
-          <Bar dataKey="onTrack" name="Open, on track" stackId="a" fill="var(--chart-2)" stroke="var(--card)" strokeWidth={2} maxBarSize={16} />
-          <Bar dataKey="overdue" name="Overdue" stackId="a" fill="var(--chart-3)" stroke="var(--card)" strokeWidth={2} radius={[0, 4, 4, 0]} maxBarSize={16} />
+          <Bar
+            dataKey="onTrack"
+            name="Open, on track"
+            stackId="a"
+            fill="var(--chart-2)"
+            stroke="var(--card)"
+            strokeWidth={2}
+            maxBarSize={16}
+          />
+          <Bar
+            dataKey="overdue"
+            name="Overdue"
+            stackId="a"
+            fill="var(--chart-3)"
+            stroke="var(--card)"
+            strokeWidth={2}
+            radius={[0, 4, 4, 0]}
+            maxBarSize={16}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

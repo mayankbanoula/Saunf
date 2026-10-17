@@ -8,9 +8,22 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 
-import { addProjectMember, createProject, removeProjectMember, setProjectArchived, updateProject } from "@/actions/projects";
+import {
+  addProjectMember,
+  createProject,
+  removeProjectMember,
+  setProjectArchived,
+  updateProject,
+} from "@/actions/projects";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/ui/form";
 import { Input, NativeSelect, Textarea } from "@/components/ui/input";
 import { UserAvatar } from "@/components/ui/primitives";
@@ -32,7 +45,15 @@ export type ProjectFormValues = {
   is_private: boolean;
 };
 
-function ProjectForm({ project, members, onDone }: { project?: ProjectFormValues; members: Member[]; onDone: () => void }) {
+function ProjectForm({
+  project,
+  members,
+  onDone,
+}: {
+  project?: ProjectFormValues;
+  members: Member[];
+  onDone: () => void;
+}) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const form = useForm<In, unknown, Out>({
@@ -143,7 +164,15 @@ export function NewProjectButton({ members }: { members: Member[] }) {
   );
 }
 
-export function ProjectAdminButtons({ project, members, archived }: { project: ProjectFormValues; members: Member[]; archived: boolean }) {
+export function ProjectAdminButtons({
+  project,
+  members,
+  archived,
+}: {
+  project: ProjectFormValues;
+  members: Member[];
+  archived: boolean;
+}) {
   const [open, setOpen] = React.useState(false);
   const [pending, start] = React.useTransition();
   return (
@@ -200,7 +229,9 @@ export function ProjectMembers({
           <li key={m.id} className="flex items-center gap-2 text-sm">
             <UserAvatar size="sm" name={m.name} id={m.id} />
             <span className="min-w-0 flex-1 truncate">{m.name}</span>
-            <span className="text-xs text-muted-foreground">{m.isOwner ? "Owner" : m.role === "lead" ? "Lead" : "Member"}</span>
+            <span className="text-xs text-muted-foreground">
+              {m.isOwner ? "Owner" : m.role === "lead" ? "Lead" : "Member"}
+            </span>
             {canManage && !m.isOwner ? (
               <Button
                 variant="ghost"
@@ -223,7 +254,12 @@ export function ProjectMembers({
       </ul>
       {canManage && available.length ? (
         <div className="flex gap-1.5">
-          <NativeSelect aria-label="Add member" className="h-8 text-sm" value={userId} onChange={(e) => setUserId(e.target.value)}>
+          <NativeSelect
+            aria-label="Add member"
+            className="h-8 text-sm"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+          >
             <option value="">Add a member…</option>
             {available.map((c) => (
               <option key={c.id} value={c.id}>
@@ -231,7 +267,12 @@ export function ProjectMembers({
               </option>
             ))}
           </NativeSelect>
-          <NativeSelect aria-label="Role" className="h-8 w-24 text-sm" value={role} onChange={(e) => setRole(e.target.value as "member" | "lead")}>
+          <NativeSelect
+            aria-label="Role"
+            className="h-8 w-24 text-sm"
+            value={role}
+            onChange={(e) => setRole(e.target.value as "member" | "lead")}
+          >
             <option value="member">Member</option>
             <option value="lead">Lead</option>
           </NativeSelect>

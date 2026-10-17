@@ -48,7 +48,10 @@ export function ActivityTimeline({
               </span>
             </p>
             {showTask && e.task ? (
-              <Link href={`/tasks/${e.task.key}`} className="text-xs text-muted-foreground hover:text-primary hover:underline">
+              <Link
+                href={`/tasks/${e.task.key}`}
+                className="text-xs text-muted-foreground hover:text-primary hover:underline"
+              >
                 {e.task.key} · {e.task.title}
               </Link>
             ) : null}

@@ -29,7 +29,9 @@ async function ProjectContent({ params, searchParams }: PageProps<"/projects/[id
 
   const { data: project } = await supabase
     .from("projects")
-    .select("*, owner:profiles!projects_owner_profile_fkey(id, full_name, email), project_members(user_id, role, profile:profiles!project_members_profile_fkey(id, full_name, email))")
+    .select(
+      "*, owner:profiles!projects_owner_profile_fkey(id, full_name, email), project_members(user_id, role, profile:profiles!project_members_profile_fkey(id, full_name, email))",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!project) notFound();
@@ -38,7 +40,9 @@ async function ProjectContent({ params, searchParams }: PageProps<"/projects/[id
     supabase.rpc("project_progress"),
     supabase
       .from("activity_events")
-      .select("id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title)")
+      .select(
+        "id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title)",
+      )
       .eq("project_id", id)
       .order("created_at", { ascending: false })
       .limit(25),
@@ -52,7 +56,9 @@ async function ProjectContent({ params, searchParams }: PageProps<"/projects/[id
   const total = Number(stat?.total ?? 0);
   const done = Number(stat?.done ?? 0);
   const pct = total ? Math.round((done / total) * 100) : 0;
-  const candidates = (memberRows ?? []).map((m) => ({ id: m.user_id, name: displayName(m.profiles) })).sort((a, b) => a.name.localeCompare(b.name));
+  const candidates = (memberRows ?? [])
+    .map((m) => ({ id: m.user_id, name: displayName(m.profiles) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const canManage =
     viewer.role === "admin" ||
     project.owner_id === viewer.id ||
@@ -71,19 +77,25 @@ async function ProjectContent({ params, searchParams }: PageProps<"/projects/[id
         title={project.name}
         description={
           <span className="mt-1 flex flex-wrap items-center gap-2">
-            <Badge variant={project.status === "active" ? "accent" : "secondary"}>{PROJECT_STATUS_LABEL[project.status]}</Badge>
+            <Badge variant={project.status === "active" ? "accent" : "secondary"}>
+              {PROJECT_STATUS_LABEL[project.status]}
+            </Badge>
             {project.is_private ? (
               <Badge variant="outline">
                 <LockIcon /> Private
               </Badge>
             ) : null}
             {project.archived_at ? <Badge variant="warning">Archived</Badge> : null}
-            {project.target_date ? <span className="text-xs">Target {formatDueDate(project.target_date, null, ctx.today)}</span> : null}
+            {project.target_date ? (
+              <span className="text-xs">Target {formatDueDate(project.target_date, null, ctx.today)}</span>
+            ) : null}
           </span>
         }
         actions={
           <>
-            {canCreateTasks(viewer) && !project.archived_at ? <NewTaskButton defaults={{ project_id: project.id }} label="Add task" /> : null}
+            {canCreateTasks(viewer) && !project.archived_at ? (
+              <NewTaskButton defaults={{ project_id: project.id }} label="Add task" />
+            ) : null}
             {canManage ? (
               <ProjectAdminButtons
                 project={{
@@ -103,18 +115,22 @@ async function ProjectContent({ params, searchParams }: PageProps<"/projects/[id
           </>
         }
       />
-      <div className="mb-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           <CardHeader>
             <CardTitle>Overview</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <p className="text-sm whitespace-pre-wrap text-muted-foreground">{project.description || "No description."}</p>
+            <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+              {project.description || "No description."}
+            </p>
             <div>
               <div className="mb-1 flex justify-between text-sm">
                 <span>
                   {done} of {total} tasks done
-                  {Number(stat?.overdue ?? 0) > 0 ? <span className="text-destructive"> · {stat?.overdue} overdue</span> : null}
+                  {Number(stat?.overdue ?? 0) > 0 ? (
+                    <span className="text-destructive"> · {stat?.overdue} overdue</span>
+                  ) : null}
                 </span>
                 <span className="font-medium">{pct}%</span>
               </div>
@@ -167,7 +183,11 @@ async function ProjectContent({ params, searchParams }: PageProps<"/projects/[id
           <CardTitle>Project activity</CardTitle>
         </CardHeader>
         <CardContent className="pl-9">
-          <ActivityTimeline events={(activity ?? []) as unknown as ActivityEvent[]} showTask emptyText="No activity yet." />
+          <ActivityTimeline
+            events={(activity ?? []) as unknown as ActivityEvent[]}
+            showTask
+            emptyText="No activity yet."
+          />
         </CardContent>
       </Card>
     </>

@@ -124,8 +124,8 @@ async function TaskDetailContent({ params }: { params: PageProps<"/tasks/[key]">
         <Alert variant="warning" className="mb-4">
           <ArchiveIcon />
           <span>
-            Archived by {displayName(task.archived_by_profile)} on <LocalDateTime iso={task.archived_at} />. Restore it to make
-            changes.
+            Archived by {displayName(task.archived_by_profile)} on <LocalDateTime iso={task.archived_at} />. Restore it
+            to make changes.
           </span>
         </Alert>
       ) : null}
@@ -138,7 +138,7 @@ async function TaskDetailContent({ params }: { params: PageProps<"/tasks/[key]">
         </Alert>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_23rem]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="grid min-w-0 content-start gap-6">
           <Card>
             <CardHeader>
@@ -154,7 +154,12 @@ async function TaskDetailContent({ params }: { params: PageProps<"/tasks/[key]">
           </Card>
 
           <Subtasks parent={task} subtasks={detail.subtasks} canAdd={permissions.edit} />
-          <Dependencies taskId={task.id} blockedBy={detail.blockedBy} blocking={detail.blocking} canEdit={permissions.edit} />
+          <Dependencies
+            taskId={task.id}
+            blockedBy={detail.blockedBy}
+            blocking={detail.blocking}
+            canEdit={permissions.edit}
+          />
           <Attachments
             taskId={task.id}
             attachments={detail.attachments}
@@ -273,7 +278,9 @@ async function TaskDetailContent({ params }: { params: PageProps<"/tasks/[key]">
                     <span className="text-muted-foreground">None</span>
                   )}
                 </Row>
-                <Row label="Department">{task.department?.name ?? <span className="text-muted-foreground">None</span>}</Row>
+                <Row label="Department">
+                  {task.department?.name ?? <span className="text-muted-foreground">None</span>}
+                </Row>
                 <Row label="Labels">
                   {task.labels.length ? (
                     <div className="flex flex-wrap gap-1">
@@ -320,7 +327,9 @@ async function TaskDetailContent({ params }: { params: PageProps<"/tasks/[key]">
                     <span>
                       <LocalDateTime iso={task.assigned_at} />
                       {task.assigned_by_profile ? (
-                        <span className="block text-xs text-muted-foreground">by {displayName(task.assigned_by_profile)}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          by {displayName(task.assigned_by_profile)}
+                        </span>
                       ) : null}
                     </span>
                   ) : (
@@ -335,7 +344,9 @@ async function TaskDetailContent({ params }: { params: PageProps<"/tasks/[key]">
                     <span>
                       <LocalDateTime iso={task.completed_at} />
                       {task.completed_by_profile ? (
-                        <span className="block text-xs text-muted-foreground">by {displayName(task.completed_by_profile)}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          by {displayName(task.completed_by_profile)}
+                        </span>
                       ) : null}
                     </span>
                   </Row>

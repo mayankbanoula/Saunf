@@ -29,7 +29,10 @@ async function TeamContent({ searchParams }: { searchParams: Promise<SP> }) {
       .select("user_id, role, department_id, profiles!workspace_members_user_id_fkey(full_name, email, job_title)")
       .eq("workspace_id", viewer.workspaceId)
       .eq("is_active", true),
-    supabase.from("departments").select("id, name, description, manager:profiles!departments_manager_id_fkey(id, full_name, email)").order("name"),
+    supabase
+      .from("departments")
+      .select("id, name, description, manager:profiles!departments_manager_id_fkey(id, full_name, email)")
+      .order("name"),
     supabase.rpc("workload_by_member"),
   ]);
   if (error) throw new Error(`Could not load team: ${error.message}`);
@@ -75,7 +78,9 @@ async function TeamContent({ searchParams }: { searchParams: Promise<SP> }) {
                         </span>
                       </Link>
                     </TableCell>
-                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">{p.dept ? deptName.get(p.dept) : "—"}</TableCell>
+                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
+                      {p.dept ? deptName.get(p.dept) : "—"}
+                    </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge variant={p.role === "employee" ? "secondary" : "accent"}>{ROLE_LABEL[p.role]}</Badge>
                     </TableCell>
@@ -100,7 +105,11 @@ async function TeamContent({ searchParams }: { searchParams: Promise<SP> }) {
           </Table>
         </Card>
       ) : !departments?.length ? (
-        <EmptyState icon={UsersIcon} title="No departments yet" description="Admins can create departments in the Admin panel." />
+        <EmptyState
+          icon={UsersIcon}
+          title="No departments yet"
+          description="Admins can create departments in the Admin panel."
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {departments.map((d) => {
@@ -111,7 +120,9 @@ async function TeamContent({ searchParams }: { searchParams: Promise<SP> }) {
               <Link key={d.id} href={`/team/departments/${d.id}`} className="group">
                 <Card className="h-full p-4 transition-colors group-hover:border-primary/40">
                   <h2 className="font-semibold group-hover:text-primary">{d.name}</h2>
-                  <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">{d.description || "No description."}</p>
+                  <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
+                    {d.description || "No description."}
+                  </p>
                   <div className="text-xs text-muted-foreground">
                     Manager: {d.manager ? displayName(d.manager) : "—"} · {inDept.length} people
                   </div>

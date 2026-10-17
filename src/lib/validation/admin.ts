@@ -6,7 +6,7 @@ const optionalUuid = z.union([z.uuid(), z.literal("").transform(() => null), z.n
 
 export const inviteSchema = z
   .object({
-    email: z.email("Enter a valid email").transform((e) => e.trim().toLowerCase()),
+    email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email")),
     full_name: z.string().trim().min(1, "Enter their name").max(120),
     role: z.enum(WORKSPACE_ROLES),
     department_id: optionalUuid,
@@ -15,7 +15,11 @@ export const inviteSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.mode === "password" && (!v.password || v.password.length < 8)) {
-      ctx.addIssue({ code: "custom", path: ["password"], message: "Set a temporary password of at least 8 characters" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["password"],
+        message: "Set a temporary password of at least 8 characters",
+      });
     }
   });
 export type InviteInput = z.input<typeof inviteSchema>;

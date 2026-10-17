@@ -22,7 +22,8 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) {
   const viewer = await requireViewer();
   const sp = await searchParams;
-  const scope = one(sp.scope) === "mine" ? "mine" : one(sp.scope) === "workspace" && viewer.role === "admin" ? "workspace" : "all";
+  const scope =
+    one(sp.scope) === "mine" ? "mine" : one(sp.scope) === "workspace" && viewer.role === "admin" ? "workspace" : "all";
   const page = Math.max(1, Number(one(sp.page)) || 1);
   const supabase = await createClient();
 
@@ -56,7 +57,11 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
         {viewer.role === "admin" ? tab("workspace", "Admin & audit") : null}
       </div>
       {events.length === 0 ? (
-        <EmptyState icon={ActivityIcon} title="No activity yet" description="Changes to tasks and projects will appear here." />
+        <EmptyState
+          icon={ActivityIcon}
+          title="No activity yet"
+          description="Changes to tasks and projects will appear here."
+        />
       ) : (
         <Card>
           <CardContent className="pt-5 pl-9">
@@ -66,10 +71,18 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
       )}
       <div className="mt-3 flex justify-between">
         <Button asChild variant="outline" size="sm" className={cn(page <= 1 && "invisible")}>
-          <Link href={`/activity?${new URLSearchParams({ ...(scope !== "all" ? { scope } : {}), page: String(page - 1) })}`}>Newer</Link>
+          <Link
+            href={`/activity?${new URLSearchParams({ ...(scope !== "all" ? { scope } : {}), page: String(page - 1) })}`}
+          >
+            Newer
+          </Link>
         </Button>
         <Button asChild variant="outline" size="sm" className={cn(!hasMore && "invisible")}>
-          <Link href={`/activity?${new URLSearchParams({ ...(scope !== "all" ? { scope } : {}), page: String(page + 1) })}`}>Older</Link>
+          <Link
+            href={`/activity?${new URLSearchParams({ ...(scope !== "all" ? { scope } : {}), page: String(page + 1) })}`}
+          >
+            Older
+          </Link>
         </Button>
       </div>
     </>

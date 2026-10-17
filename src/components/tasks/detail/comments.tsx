@@ -31,7 +31,10 @@ type Member = { id: string; full_name: string };
 
 /** Render text, highlighting "@Name" for users actually mentioned. */
 function CommentBody({ body, mentioned, members }: { body: string; mentioned: string[]; members: Member[] }) {
-  const names = members.filter((m) => mentioned.includes(m.id)).map((m) => m.full_name).sort((a, b) => b.length - a.length);
+  const names = members
+    .filter((m) => mentioned.includes(m.id))
+    .map((m) => m.full_name)
+    .sort((a, b) => b.length - a.length);
   if (!names.length) return <p className="text-sm whitespace-pre-wrap">{body}</p>;
   const escaped = names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const parts = body.split(new RegExp(`(@(?:${escaped.join("|")}))`, "g"));
@@ -73,7 +76,13 @@ export function Comments({
       </h2>
       <ul className="mb-4 grid gap-3">
         {comments.map((c) => (
-          <CommentItem key={c.id} comment={c} members={members} canEdit={c.author?.id === viewerId} canDelete={c.author?.id === viewerId || isAdmin} />
+          <CommentItem
+            key={c.id}
+            comment={c}
+            members={members}
+            canEdit={c.author?.id === viewerId}
+            canDelete={c.author?.id === viewerId || isAdmin}
+          />
         ))}
       </ul>
       {canComment ? (
@@ -144,7 +153,13 @@ function CommentItem({
         </div>
         {editing ? (
           <div className="grid gap-2">
-            <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={10000} aria-label="Edit comment" />
+            <Textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={3}
+              maxLength={10000}
+              aria-label="Edit comment"
+            />
             <div className="flex justify-end gap-2">
               <Button size="xs" variant="outline" onClick={() => (setEditing(false), setText(comment.body))}>
                 Cancel
@@ -255,7 +270,11 @@ function Composer({ taskId, members }: { taskId: string; members: Member[] }) {
         }}
       />
       {suggestions.length ? (
-        <ul role="listbox" aria-label="Mention someone" className="absolute bottom-full left-0 z-20 mb-1 w-64 rounded-md border bg-popover p-1 shadow-md">
+        <ul
+          role="listbox"
+          aria-label="Mention someone"
+          className="absolute bottom-full left-0 z-20 mb-1 w-64 rounded-md border bg-popover p-1 shadow-md"
+        >
           {suggestions.map((m, i) => (
             <li key={m.id} role="option" aria-selected={i === highlight}>
               <button
@@ -264,7 +283,10 @@ function Composer({ taskId, members }: { taskId: string; members: Member[] }) {
                   e.preventDefault();
                   pick(m);
                 }}
-                className={cn("flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm", i === highlight && "bg-muted")}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm",
+                  i === highlight && "bg-muted",
+                )}
               >
                 <UserAvatar size="xs" name={m.full_name} id={m.id} /> {m.full_name}
               </button>

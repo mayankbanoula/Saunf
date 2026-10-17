@@ -65,9 +65,24 @@ create or replace function private.prevent_audit_mutation()
 returns trigger
 language plpgsql set search_path = ''
 as $$
+declare
+  v_people text[] := case tg_table_name
+    when 'activity_events' then array['actor_id']
+    else array['previous_assignee_id', 'new_assignee_id', 'changed_by'] end;
+  k text;
 begin
   if tg_op = 'DELETE' and current_setting('saunf.allow_audit_purge', true) = 'on' then
     return old;
+  end if;
+  -- The only permitted UPDATE: a deleted user's id becoming NULL (ON DELETE SET NULL),
+  -- which pseudonymises history without changing what happened.
+  if tg_op = 'UPDATE' and (to_jsonb(new) - v_people) = (to_jsonb(old) - v_people) then
+    foreach k in array v_people loop
+      if (to_jsonb(new) ->> k) is not null and (to_jsonb(new) ->> k) is distinct from (to_jsonb(old) ->> k) then
+        raise exception '% is append-only', tg_table_name using errcode = '42501';
+      end if;
+    end loop;
+    return new;
   end if;
   raise exception '% is append-only', tg_table_name using errcode = '42501';
 end;
@@ -383,35 +398,35 @@ begin
 
   -- Other detail edits are grouped into one event.
   if new.title is distinct from old.title then
-    v_fields := v_fields || 'title';
+    v_fields := array_append(v_fields, 'title');
     v_old := v_old || jsonb_build_object('title', old.title);
     v_new := v_new || jsonb_build_object('title', new.title);
   end if;
   if new.description is distinct from old.description then
-    v_fields := v_fields || 'description'; -- the text itself is not copied into the log
+    v_fields := array_append(v_fields, 'description'); -- the text itself is not copied into the log
   end if;
   if new.project_id is distinct from old.project_id then
-    v_fields := v_fields || 'project';
+    v_fields := array_append(v_fields, 'project');
     v_old := v_old || jsonb_build_object('project', (select name from public.projects where id = old.project_id));
     v_new := v_new || jsonb_build_object('project', (select name from public.projects where id = new.project_id));
   end if;
   if new.department_id is distinct from old.department_id then
-    v_fields := v_fields || 'department';
+    v_fields := array_append(v_fields, 'department');
     v_old := v_old || jsonb_build_object('department', (select name from public.departments where id = old.department_id));
     v_new := v_new || jsonb_build_object('department', (select name from public.departments where id = new.department_id));
   end if;
   if new.parent_id is distinct from old.parent_id then
-    v_fields := v_fields || 'parent';
+    v_fields := array_append(v_fields, 'parent');
     v_old := v_old || jsonb_build_object('parent', (select key from public.tasks where id = old.parent_id));
     v_new := v_new || jsonb_build_object('parent', (select key from public.tasks where id = new.parent_id));
   end if;
   if new.start_date is distinct from old.start_date then
-    v_fields := v_fields || 'start_date';
+    v_fields := array_append(v_fields, 'start_date');
     v_old := v_old || jsonb_build_object('start_date', old.start_date);
     v_new := v_new || jsonb_build_object('start_date', new.start_date);
   end if;
   if new.estimate_hours is distinct from old.estimate_hours then
-    v_fields := v_fields || 'estimate';
+    v_fields := array_append(v_fields, 'estimate');
     v_old := v_old || jsonb_build_object('estimate_hours', old.estimate_hours);
     v_new := v_new || jsonb_build_object('estimate_hours', new.estimate_hours);
   end if;
@@ -892,15 +907,15 @@ begin
     perform private.log_event(new.workspace_id, null, new.id, v_uid, 'project_created', null,
       jsonb_build_object('name', new.name, 'is_private', new.is_private));
   else
-    if new.name is distinct from old.name then v_fields := v_fields || 'name'; end if;
-    if new.description is distinct from old.description then v_fields := v_fields || 'description'; end if;
-    if new.owner_id is distinct from old.owner_id then v_fields := v_fields || 'owner'; end if;
-    if new.status is distinct from old.status then v_fields := v_fields || 'status'; end if;
+    if new.name is distinct from old.name then v_fields := array_append(v_fields, 'name'); end if;
+    if new.description is distinct from old.description then v_fields := array_append(v_fields, 'description'); end if;
+    if new.owner_id is distinct from old.owner_id then v_fields := array_append(v_fields, 'owner'); end if;
+    if new.status is distinct from old.status then v_fields := array_append(v_fields, 'status'); end if;
     if row(new.start_date, new.target_date) is distinct from row(old.start_date, old.target_date) then
-      v_fields := v_fields || 'dates';
+      v_fields := array_append(v_fields, 'dates');
     end if;
-    if new.is_private is distinct from old.is_private then v_fields := v_fields || 'visibility'; end if;
-    if (new.archived_at is null) <> (old.archived_at is null) then v_fields := v_fields || 'archived'; end if;
+    if new.is_private is distinct from old.is_private then v_fields := array_append(v_fields, 'visibility'); end if;
+    if (new.archived_at is null) <> (old.archived_at is null) then v_fields := array_append(v_fields, 'archived'); end if;
     if cardinality(v_fields) > 0 then
       perform private.log_event(new.workspace_id, null, new.id, v_uid, 'project_updated',
         jsonb_build_object('name', old.name, 'status', old.status, 'is_private', old.is_private),

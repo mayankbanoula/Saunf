@@ -22,9 +22,21 @@ export function resolveRange(
   const to = get("to");
   if (from && to && ISO.test(from) && ISO.test(to) && from <= to) {
     const capped = from < addDaysIso(to, -366) ? addDaysIso(to, -366) : from;
-    return { key: "custom", label: `${capped} – ${to}`, from: capped, to, ...dateRangeToTimestamps(capped, to, timezone) };
+    return {
+      key: "custom",
+      label: `${capped} – ${to}`,
+      from: capped,
+      to,
+      ...dateRangeToTimestamps(capped, to, timezone),
+    };
   }
   const preset = RANGE_PRESETS.find((p) => p.key === get("range")) ?? RANGE_PRESETS.find((p) => p.key === fallback)!;
   const start = addDaysIso(today, -(preset.days - 1));
-  return { key: preset.key, label: preset.label, from: start, to: today, ...dateRangeToTimestamps(start, today, timezone) };
+  return {
+    key: preset.key,
+    label: preset.label,
+    from: start,
+    to: today,
+    ...dateRangeToTimestamps(start, today, timezone),
+  };
 }

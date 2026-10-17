@@ -4,13 +4,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 
 import { createLabel, createTask, getTaskFormOptions, updateTask, type TaskFormOptions } from "@/actions/tasks";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/ui/form";
 import { Input, NativeSelect, Textarea } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -42,7 +49,9 @@ export type EditableTask = {
   collaborator_ids: string[];
 };
 
-export type TaskFormDefaults = Partial<Pick<EditableTask, "project_id" | "parent_id" | "assignee_id" | "due_date" | "status">> & {
+export type TaskFormDefaults = Partial<
+  Pick<EditableTask, "project_id" | "parent_id" | "assignee_id" | "due_date" | "status">
+> & {
   parentKey?: string;
 };
 
@@ -81,7 +90,13 @@ export function TaskFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? `Edit ${task!.key}` : defaults?.parentKey ? `New subtask of ${defaults.parentKey}` : "New task"}</DialogTitle>
+          <DialogTitle>
+            {mode === "edit"
+              ? `Edit ${task!.key}`
+              : defaults?.parentKey
+                ? `New subtask of ${defaults.parentKey}`
+                : "New task"}
+          </DialogTitle>
           <DialogDescription>
             {mode === "edit" ? "Changes are recorded in the task's activity history." : "Fields marked * are required."}
           </DialogDescription>
@@ -103,7 +118,9 @@ export function TaskFormDialog({
               key={task?.id ?? "new"}
               options={options}
               onLabelCreated={(label) =>
-                setOptions((o) => (o ? { ...o, labels: [...o.labels, label].sort((a, b) => a.name.localeCompare(b.name)) } : o))
+                setOptions((o) =>
+                  o ? { ...o, labels: [...o.labels, label].sort((a, b) => a.name.localeCompare(b.name)) } : o,
+                )
               }
               task={task}
               defaults={defaults}
@@ -134,10 +151,7 @@ function TaskForm({
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const viewer = options.viewer;
-  const assignable = assignableMembers(
-    { ...viewer, assignmentPolicy: viewer.assignmentPolicy },
-    options.members,
-  );
+  const assignable = assignableMembers({ ...viewer, assignmentPolicy: viewer.assignmentPolicy }, options.members);
   // Keep the current assignee selectable even if policy wouldn't allow picking them now.
   const assigneeOptions =
     task?.assignee_id && !assignable.some((m) => m.id === task.assignee_id)
@@ -151,7 +165,10 @@ function TaskForm({
       description: task?.description ?? "",
       status: task?.status ?? defaults?.status ?? viewer.defaultStatus,
       priority: task?.priority ?? viewer.defaultPriority,
-      assignee_id: task ? (task.assignee_id ?? "") : (defaults?.assignee_id ?? (viewer.assignmentPolicy === "self" && viewer.role === "employee" ? viewer.id : "")),
+      assignee_id: task
+        ? (task.assignee_id ?? "")
+        : (defaults?.assignee_id ??
+          (viewer.assignmentPolicy === "self" && viewer.role === "employee" ? viewer.id : "")),
       project_id: task?.project_id ?? defaults?.project_id ?? "",
       department_id: task?.department_id ?? "",
       parent_id: task?.parent_id ?? defaults?.parent_id ?? null,
@@ -164,9 +181,10 @@ function TaskForm({
       note: "",
     },
   });
-  const { register, handleSubmit, formState, control, watch } = form;
+  const { register, handleSubmit, formState, control } = form;
   const errors = formState.errors;
-  const assigneeChanged = watch("assignee_id") !== (task?.assignee_id ?? "");
+  const assigneeId = useWatch({ control, name: "assignee_id" });
+  const assigneeChanged = assigneeId !== (task?.assignee_id ?? "");
 
   async function onSubmit(values: FormOutput) {
     setServerError(null);
@@ -187,7 +205,7 @@ function TaskForm({
   }
 
   const memberOptions = options.members
-    .filter((m) => m.id !== watch("assignee_id"))
+    .filter((m) => m.id !== assigneeId)
     .map((m) => ({ value: m.id, label: m.full_name, hint: m.email }));
 
   return (
@@ -205,7 +223,11 @@ function TaskForm({
           label="Assignee"
           htmlFor="task-assignee"
           error={errors.assignee_id?.message}
-          hint={viewer.role === "employee" && viewer.assignmentPolicy !== "anyone" ? "Limited by workspace policy." : undefined}
+          hint={
+            viewer.role === "employee" && viewer.assignmentPolicy !== "anyone"
+              ? "Limited by workspace policy."
+              : undefined
+          }
         >
           <NativeSelect {...register("assignee_id")}>
             <option value="">Unassigned</option>
@@ -258,7 +280,11 @@ function TaskForm({
             <Input type="time" {...register("due_time")} />
           </Field>
         </div>
-        <Field label="Department" htmlFor="task-department" hint={!task ? "Defaults to the assignee's department." : undefined}>
+        <Field
+          label="Department"
+          htmlFor="task-department"
+          hint={!task ? "Defaults to the assignee's department." : undefined}
+        >
           <NativeSelect {...register("department_id")}>
             <option value="">{task ? "None" : "Automatic"}</option>
             {options.departments.map((d) => (
@@ -296,7 +322,11 @@ function TaskForm({
           )}
         />
       </Field>
-      <Field label="Collaborators" htmlFor="task-collaborators" hint="People who should follow and help with this task.">
+      <Field
+        label="Collaborators"
+        htmlFor="task-collaborators"
+        hint="People who should follow and help with this task."
+      >
         <Controller
           control={control}
           name="collaborator_ids"
@@ -310,7 +340,7 @@ function TaskForm({
           )}
         />
       </Field>
-      {assigneeChanged && watch("assignee_id") ? (
+      {assigneeChanged && assigneeId ? (
         <Field label="Assignment note" htmlFor="task-note" hint="Optional — saved in the assignment history.">
           <Input {...register("note")} maxLength={500} placeholder="Why this person?" />
         </Field>

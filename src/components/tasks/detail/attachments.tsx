@@ -45,7 +45,12 @@ export function Attachments({
     }
     setUploading(file.name);
     try {
-      const prep = await prepareAttachmentUpload({ task_id: taskId, file_name: file.name, size_bytes: file.size, mime_type: file.type });
+      const prep = await prepareAttachmentUpload({
+        task_id: taskId,
+        file_name: file.name,
+        size_bytes: file.size,
+        mime_type: file.type,
+      });
       if (!prep.ok) return void toast.error(prep.error);
       // Upload with the user's own session: storage RLS checks task access.
       const supabase = createClient();
@@ -114,7 +119,9 @@ export function Attachments({
         ) : null}
       </div>
       {attachments.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No files attached. Images, PDFs, Office documents, text and ZIP files up to 25 MB.</p>
+        <p className="text-sm text-muted-foreground">
+          No files attached. Images, PDFs, Office documents, text and ZIP files up to 25 MB.
+        </p>
       ) : (
         <ul className="divide-y rounded-md border bg-card">
           {attachments.map((a) => (
@@ -126,11 +133,23 @@ export function Attachments({
                   {formatBytes(a.size_bytes)} · {displayName(a.uploader)} · <LocalDateTime iso={a.created_at} />
                 </div>
               </div>
-              <Button variant="ghost" size="icon-sm" aria-label={`Download ${a.file_name}`} onClick={() => download(a)} disabled={busyId === a.id}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Download ${a.file_name}`}
+                onClick={() => download(a)}
+                disabled={busyId === a.id}
+              >
                 {busyId === a.id ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
               </Button>
               {canDeleteAny || a.uploaded_by === viewerId ? (
-                <Button variant="ghost" size="icon-sm" aria-label={`Remove ${a.file_name}`} onClick={() => remove(a)} disabled={busyId === a.id}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Remove ${a.file_name}`}
+                  onClick={() => remove(a)}
+                  disabled={busyId === a.id}
+                >
                   <Trash2Icon />
                 </Button>
               ) : null}

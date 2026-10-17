@@ -35,6 +35,7 @@ export function MultiSelect({
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [creating, setCreating] = React.useState(false);
+  const listId = React.useId();
   const selected = options.filter((o) => value.includes(o.value));
   const toggle = (v: string) => onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
   const canCreate =
@@ -48,6 +49,7 @@ export function MultiSelect({
           type="button"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listId}
           aria-invalid={ariaInvalid}
           aria-describedby={ariaDescribedBy}
           disabled={disabled}
@@ -56,10 +58,7 @@ export function MultiSelect({
           <span className="flex flex-1 flex-wrap gap-1">
             {selected.length === 0 ? <span className="px-1 text-muted-foreground">{placeholder}</span> : null}
             {selected.map((o) => (
-              <span
-                key={o.value}
-                className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-xs"
-              >
+              <span key={o.value} className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-xs">
                 {o.color ? <span className="size-2 rounded-full" style={{ background: o.color }} /> : null}
                 {o.label}
                 <span
@@ -89,7 +88,7 @@ export function MultiSelect({
             placeholder="Search…"
             className="h-9 border-b bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
           />
-          <Command.List className="max-h-60 overflow-y-auto p-1">
+          <Command.List id={listId} className="max-h-60 overflow-y-auto p-1">
             <Command.Empty className="px-2 py-3 text-center text-sm text-muted-foreground">
               {canCreate ? null : emptyText}
             </Command.Empty>

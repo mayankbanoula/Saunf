@@ -53,7 +53,10 @@ export function Subtasks({
           {subtasks.map((s) => (
             <li key={s.id} className="flex items-center gap-3 px-3 py-2">
               <span className="font-mono text-xs text-muted-foreground">{s.key}</span>
-              <Link href={`/tasks/${s.key}`} className="min-w-0 flex-1 truncate text-sm hover:text-primary hover:underline">
+              <Link
+                href={`/tasks/${s.key}`}
+                className="min-w-0 flex-1 truncate text-sm hover:text-primary hover:underline"
+              >
                 {s.title}
               </Link>
               <StatusBadge status={s.status} />
@@ -130,7 +133,13 @@ export function Dependencies({
                 if (key.trim()) add();
               }}
             >
-              <Input value={key} onChange={(e) => setKey(e.target.value)} placeholder="Task ID, e.g. SAU-00012" className="h-8" aria-label="Blocked by task ID" />
+              <Input
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder="Task ID, e.g. SAU-00012"
+                className="h-8"
+                aria-label="Blocked by task ID"
+              />
               <Button size="sm" variant="outline" disabled={pending || !key.trim()}>
                 {pending ? <Loader2Icon className="animate-spin" /> : null} Add
               </Button>

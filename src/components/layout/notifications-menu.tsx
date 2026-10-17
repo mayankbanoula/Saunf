@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { getUnreadCount, listNotifications, markNotificationsRead, type NotificationItem } from "@/actions/notifications";
+import {
+  getUnreadCount,
+  listNotifications,
+  markNotificationsRead,
+  type NotificationItem,
+} from "@/actions/notifications";
 import { RelativeTime } from "@/components/time";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/overlays";
@@ -22,12 +27,19 @@ export function NotificationsMenu({ initialUnread }: { initialUnread: number }) 
   const [items, setItems] = React.useState<NotificationItem[] | null>(null);
   const [loading, setLoading] = React.useState(false);
 
-  React.useEffect(() => setUnread(initialUnread), [initialUnread]);
+  const [seenInitial, setSeenInitial] = React.useState(initialUnread);
+  if (seenInitial !== initialUnread) {
+    setSeenInitial(initialUnread);
+    setUnread(initialUnread);
+  }
 
   // Lightweight polling for the badge; the list itself loads when opened.
   React.useEffect(() => {
     const id = window.setInterval(() => {
-      if (document.visibilityState === "visible") getUnreadCount().then(setUnread).catch(() => {});
+      if (document.visibilityState === "visible")
+        getUnreadCount()
+          .then(setUnread)
+          .catch(() => {});
     }, POLL_MS);
     return () => window.clearInterval(id);
   }, []);
@@ -117,7 +129,10 @@ export function NotificationsMenu({ initialUnread }: { initialUnread: number }) 
                       )}
                     >
                       <span
-                        className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read_at ? "bg-transparent" : "bg-primary")}
+                        className={cn(
+                          "mt-1.5 size-2 shrink-0 rounded-full",
+                          n.read_at ? "bg-transparent" : "bg-primary",
+                        )}
                         aria-hidden
                       />
                       <span className="min-w-0 flex-1">

@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2Icon } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 
@@ -17,7 +17,11 @@ type ProfileIn = z.input<typeof profileSchema>;
 type ProfileOut = z.output<typeof profileSchema>;
 
 export function ProfileForm({ initial }: { initial: ProfileIn }) {
-  const form = useForm<ProfileIn, unknown, ProfileOut>({ resolver: zodResolver(profileSchema), defaultValues: initial });
+  const form = useForm<ProfileIn, unknown, ProfileOut>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: initial,
+  });
+  const emailNotifications = useWatch({ control: form.control, name: "email_notifications" });
   const onSubmit = async (v: ProfileOut) => {
     const res = await updateProfile(v);
     if (!res.ok) return void toast.error(res.error);
@@ -37,11 +41,13 @@ export function ProfileForm({ initial }: { initial: ProfileIn }) {
       <div className="flex items-start justify-between gap-4">
         <label htmlFor="email_notifications" className="text-sm">
           <span className="font-medium">Email me notifications</span>
-          <span className="block text-xs text-muted-foreground">Applies when your workspace has email notifications enabled.</span>
+          <span className="block text-xs text-muted-foreground">
+            Applies when your workspace has email notifications enabled.
+          </span>
         </label>
         <Switch
           id="email_notifications"
-          checked={form.watch("email_notifications")}
+          checked={emailNotifications}
           onCheckedChange={(c) => form.setValue("email_notifications", c, { shouldDirty: true })}
         />
       </div>

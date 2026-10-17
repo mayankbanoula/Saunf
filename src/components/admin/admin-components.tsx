@@ -1,11 +1,20 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2Icon, MailIcon, PencilIcon, PlusIcon, RotateCwIcon, Trash2Icon, UserPlusIcon, XIcon } from "lucide-react";
+import {
+  Loader2Icon,
+  MailIcon,
+  PencilIcon,
+  PlusIcon,
+  RotateCwIcon,
+  Trash2Icon,
+  UserPlusIcon,
+  XIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 
@@ -21,11 +30,26 @@ import {
 } from "@/actions/admin";
 import { LocalDateTime } from "@/components/time";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/ui/form";
 import { Input, NativeSelect, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/overlays";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, UserAvatar } from "@/components/ui/primitives";
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  UserAvatar,
+} from "@/components/ui/primitives";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ASSIGNMENT_POLICY_LABEL,
@@ -66,7 +90,9 @@ export function AdminNav() {
             aria-current={active ? "page" : undefined}
             className={cn(
               "-mb-px border-b-2 px-3 py-2 text-sm whitespace-nowrap",
-              active ? "border-primary font-medium text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
+              active
+                ? "border-primary font-medium text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label}
@@ -94,7 +120,15 @@ export type MemberRow = {
   pending_invite: boolean;
 };
 
-export function MembersTable({ members, departments, viewerId }: { members: MemberRow[]; departments: Dept[]; viewerId: string }) {
+export function MembersTable({
+  members,
+  departments,
+  viewerId,
+}: {
+  members: MemberRow[];
+  departments: Dept[];
+  viewerId: string;
+}) {
   const [busy, setBusy] = React.useState<string | null>(null);
   const run = async (id: string, fn: () => Promise<{ ok: boolean; error?: string }>, success: string) => {
     setBusy(id);
@@ -141,7 +175,11 @@ export function MembersTable({ members, departments, viewerId }: { members: Memb
                     value={m.role}
                     disabled={self || busy === m.user_id}
                     onChange={(e) =>
-                      run(m.user_id, () => updateMember({ user_id: m.user_id, role: e.target.value as WorkspaceRole }), "Role updated")
+                      run(
+                        m.user_id,
+                        () => updateMember({ user_id: m.user_id, role: e.target.value as WorkspaceRole }),
+                        "Role updated",
+                      )
                     }
                   >
                     {WORKSPACE_ROLES.map((r) => (
@@ -157,7 +195,13 @@ export function MembersTable({ members, departments, viewerId }: { members: Memb
                     className="h-8 w-40 text-sm"
                     value={m.department_id ?? ""}
                     disabled={busy === m.user_id}
-                    onChange={(e) => run(m.user_id, () => updateMember({ user_id: m.user_id, department_id: e.target.value }), "Department updated")}
+                    onChange={(e) =>
+                      run(
+                        m.user_id,
+                        () => updateMember({ user_id: m.user_id, department_id: e.target.value }),
+                        "Department updated",
+                      )
+                    }
                   >
                     <option value="">No department</option>
                     {departments.map((d) => (
@@ -177,8 +221,16 @@ export function MembersTable({ members, departments, viewerId }: { members: Memb
                       checked={m.is_active}
                       disabled={self || busy === m.user_id}
                       onCheckedChange={(checked) => {
-                        if (!checked && !window.confirm(`Deactivate ${m.full_name || m.email}? They will lose access immediately.`)) return;
-                        void run(m.user_id, () => setMemberActive(m.user_id, checked), checked ? "Member reactivated" : "Member deactivated");
+                        if (
+                          !checked &&
+                          !window.confirm(`Deactivate ${m.full_name || m.email}? They will lose access immediately.`)
+                        )
+                          return;
+                        void run(
+                          m.user_id,
+                          () => setMemberActive(m.user_id, checked),
+                          checked ? "Member reactivated" : "Member deactivated",
+                        );
                       }}
                     />
                     {busy === m.user_id ? <Loader2Icon className="size-4 animate-spin text-muted-foreground" /> : null}
@@ -206,12 +258,14 @@ export function InviteButton({ departments }: { departments: Dept[] }) {
     resolver: zodResolver(inviteSchema),
     defaultValues: { email: "", full_name: "", role: "employee", department_id: "", mode: "invite", password: "" },
   });
-  const mode = form.watch("mode");
+  const mode = useWatch({ control: form.control, name: "mode" });
   const onSubmit = async (values: InviteOut) => {
     setError(null);
     const res = await inviteMember(values);
     if (!res.ok) return setError(res.error);
-    toast.success(res.data.mode === "invite" ? `Invitation sent to ${values.email}` : `Account created for ${values.email}`);
+    toast.success(
+      res.data.mode === "invite" ? `Invitation sent to ${values.email}` : `Account created for ${values.email}`,
+    );
     form.reset();
     setOpen(false);
   };
@@ -225,7 +279,9 @@ export function InviteButton({ departments }: { departments: Dept[] }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add an employee</DialogTitle>
-            <DialogDescription>Saunf is invite-only. New members join with the role and department you choose.</DialogDescription>
+            <DialogDescription>
+              Saunf is invite-only. New members join with the role and department you choose.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4" noValidate>
             <FormError message={error} />
@@ -259,15 +315,31 @@ export function InviteButton({ departments }: { departments: Dept[] }) {
             <fieldset className="grid gap-2">
               <legend className="mb-1 text-sm font-medium">How should they get access?</legend>
               <label className="flex items-start gap-2 text-sm">
-                <input type="radio" value="invite" className="mt-1 accent-[var(--primary)]" {...form.register("mode")} />
+                <input
+                  type="radio"
+                  value="invite"
+                  className="mt-1 accent-[var(--primary)]"
+                  {...form.register("mode")}
+                />
                 <span>
-                  Email an invitation <span className="block text-xs text-muted-foreground">They choose their own password. Requires email (SMTP) to be configured in Supabase.</span>
+                  Email an invitation{" "}
+                  <span className="block text-xs text-muted-foreground">
+                    They choose their own password. Requires email (SMTP) to be configured in Supabase.
+                  </span>
                 </span>
               </label>
               <label className="flex items-start gap-2 text-sm">
-                <input type="radio" value="password" className="mt-1 accent-[var(--primary)]" {...form.register("mode")} />
+                <input
+                  type="radio"
+                  value="password"
+                  className="mt-1 accent-[var(--primary)]"
+                  {...form.register("mode")}
+                />
                 <span>
-                  Create the account with a temporary password <span className="block text-xs text-muted-foreground">Share it securely; they can change it in Settings.</span>
+                  Create the account with a temporary password{" "}
+                  <span className="block text-xs text-muted-foreground">
+                    Share it securely; they can change it in Settings.
+                  </span>
                 </span>
               </label>
             </fieldset>
@@ -344,14 +416,22 @@ export function InvitationsTable({ invitations }: { invitations: InvitationRow[]
               <TableCell className="text-right">
                 {i.status === "pending" ? (
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="xs" disabled={busy === i.id} onClick={() => run(i.id, () => resendInvitation(i.id), "Invitation re-sent")}>
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      disabled={busy === i.id}
+                      onClick={() => run(i.id, () => resendInvitation(i.id), "Invitation re-sent")}
+                    >
                       <RotateCwIcon /> Resend
                     </Button>
                     <Button
                       variant="ghost"
                       size="xs"
                       disabled={busy === i.id}
-                      onClick={() => window.confirm(`Revoke the invitation for ${i.email}?`) && run(i.id, () => revokeInvitation(i.id), "Invitation revoked")}
+                      onClick={() =>
+                        window.confirm(`Revoke the invitation for ${i.email}?`) &&
+                        run(i.id, () => revokeInvitation(i.id), "Invitation revoked")
+                      }
                     >
                       <XIcon /> Revoke
                     </Button>
@@ -369,7 +449,13 @@ export function InvitationsTable({ invitations }: { invitations: InvitationRow[]
 // ---------------------------------------------------------------------------
 // Departments
 // ---------------------------------------------------------------------------
-export type DepartmentRow = { id: string; name: string; description: string | null; manager_id: string | null; member_count: number };
+export type DepartmentRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  manager_id: string | null;
+  member_count: number;
+};
 type DeptIn = z.input<typeof departmentSchema>;
 type DeptOut = z.output<typeof departmentSchema>;
 
@@ -387,7 +473,11 @@ function DepartmentDialog({
   const [error, setError] = React.useState<string | null>(null);
   const form = useForm<DeptIn, unknown, DeptOut>({
     resolver: zodResolver(departmentSchema),
-    values: { name: department?.name ?? "", description: department?.description ?? "", manager_id: department?.manager_id ?? "" },
+    values: {
+      name: department?.name ?? "",
+      description: department?.description ?? "",
+      manager_id: department?.manager_id ?? "",
+    },
   });
   const onSubmit = async (v: DeptOut) => {
     setError(null);
@@ -434,7 +524,13 @@ function DepartmentDialog({
   );
 }
 
-export function DepartmentsManager({ departments, people }: { departments: DepartmentRow[]; people: { id: string; name: string }[] }) {
+export function DepartmentsManager({
+  departments,
+  people,
+}: {
+  departments: DepartmentRow[];
+  people: { id: string; name: string }[];
+}) {
   const [editing, setEditing] = React.useState<DepartmentRow | undefined>();
   const [open, setOpen] = React.useState(false);
   const managerName = (id: string | null) => people.find((p) => p.id === id)?.name ?? "—";
@@ -490,7 +586,8 @@ export function DepartmentsManager({ departments, people }: { departments: Depar
                       size="icon-sm"
                       aria-label={`Delete ${d.name}`}
                       onClick={async () => {
-                        if (!window.confirm(`Delete ${d.name}? Members and tasks keep working without a department.`)) return;
+                        if (!window.confirm(`Delete ${d.name}? Members and tasks keep working without a department.`))
+                          return;
                         const res = await deleteDepartment(d.id);
                         if (res.ok) toast.success("Department deleted");
                         else toast.error(res.error);
@@ -518,8 +615,16 @@ type SettingsOut = z.output<typeof settingsSchema>;
 
 export function SettingsForm({ initial, timezones }: { initial: SettingsIn; timezones: string[] }) {
   const [error, setError] = React.useState<string | null>(null);
-  const form = useForm<SettingsIn, unknown, SettingsOut>({ resolver: zodResolver(settingsSchema), defaultValues: initial });
-  const { register, formState, setValue, watch } = form;
+  const form = useForm<SettingsIn, unknown, SettingsOut>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: initial,
+  });
+  const { register, formState, setValue, control } = form;
+  const flags = {
+    employees_can_create_tasks: useWatch({ control, name: "employees_can_create_tasks" }),
+    due_reminders_enabled: useWatch({ control, name: "due_reminders_enabled" }),
+    email_notifications_enabled: useWatch({ control, name: "email_notifications_enabled" }),
+  };
   const onSubmit = async (v: SettingsOut) => {
     setError(null);
     const res = await updateWorkspaceSettings(v);
@@ -527,13 +632,17 @@ export function SettingsForm({ initial, timezones }: { initial: SettingsIn; time
     toast.success("Settings saved");
     form.reset(v as SettingsIn);
   };
-  const toggle = (name: "employees_can_create_tasks" | "due_reminders_enabled" | "email_notifications_enabled", label: string, hint: string) => (
+  const toggle = (
+    name: "employees_can_create_tasks" | "due_reminders_enabled" | "email_notifications_enabled",
+    label: string,
+    hint: string,
+  ) => (
     <div className="flex items-start justify-between gap-4">
       <label htmlFor={name} className="text-sm">
         <span className="font-medium">{label}</span>
         <span className="block text-xs text-muted-foreground">{hint}</span>
       </label>
-      <Switch id={name} checked={!!watch(name)} onCheckedChange={(c) => setValue(name, c, { shouldDirty: true })} />
+      <Switch id={name} checked={!!flags[name]} onCheckedChange={(c) => setValue(name, c, { shouldDirty: true })} />
     </div>
   );
 
@@ -569,7 +678,11 @@ export function SettingsForm({ initial, timezones }: { initial: SettingsIn; time
           </div>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {toggle("employees_can_create_tasks", "Employees can create tasks", "Admins and managers can always create tasks.")}
+          {toggle(
+            "employees_can_create_tasks",
+            "Employees can create tasks",
+            "Admins and managers can always create tasks.",
+          )}
           <Field label="Assignment policy for employees" htmlFor="assignment_policy">
             <NativeSelect {...register("assignment_policy")}>
               {(["anyone", "department", "self"] as const).map((p) => (
@@ -579,7 +692,11 @@ export function SettingsForm({ initial, timezones }: { initial: SettingsIn; time
               ))}
             </NativeSelect>
           </Field>
-          <Field label="Task visibility for employees" htmlFor="task_visibility" hint="Private projects are always limited to their members.">
+          <Field
+            label="Task visibility for employees"
+            htmlFor="task_visibility"
+            hint="Private projects are always limited to their members."
+          >
             <NativeSelect {...register("task_visibility")}>
               {(["all", "participants"] as const).map((v) => (
                 <option key={v} value={v}>
@@ -624,8 +741,16 @@ export function SettingsForm({ initial, timezones }: { initial: SettingsIn; time
           </div>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {toggle("due_reminders_enabled", "Due-soon and overdue reminders", "Checked every 15 minutes by the database scheduler (pg_cron).")}
-          <Field label="“Due soon” window (hours)" htmlFor="due_soon_hours" error={formState.errors.due_soon_hours?.message}>
+          {toggle(
+            "due_reminders_enabled",
+            "Due-soon and overdue reminders",
+            "Checked every 15 minutes by the database scheduler (pg_cron).",
+          )}
+          <Field
+            label="“Due soon” window (hours)"
+            htmlFor="due_soon_hours"
+            error={formState.errors.due_soon_hours?.message}
+          >
             <Input type="number" min={1} max={168} className="w-32" {...register("due_soon_hours")} />
           </Field>
           {toggle(

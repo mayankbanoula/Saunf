@@ -41,8 +41,22 @@ export function RangePicker({ current, from, to }: { current: string; from: stri
       </NativeSelect>
       {current === "custom" ? (
         <>
-          <Input type="date" aria-label="From" className="h-8 w-auto text-sm" value={from} max={to} onChange={(e) => e.target.value && apply({ range: null, from: e.target.value, to })} />
-          <Input type="date" aria-label="To" className="h-8 w-auto text-sm" value={to} min={from} onChange={(e) => e.target.value && apply({ range: null, from, to: e.target.value })} />
+          <Input
+            type="date"
+            aria-label="From"
+            className="h-8 w-auto text-sm"
+            value={from}
+            max={to}
+            onChange={(e) => e.target.value && apply({ range: null, from: e.target.value, to })}
+          />
+          <Input
+            type="date"
+            aria-label="To"
+            className="h-8 w-auto text-sm"
+            value={to}
+            min={from}
+            onChange={(e) => e.target.value && apply({ range: null, from, to: e.target.value })}
+          />
         </>
       ) : null}
     </div>

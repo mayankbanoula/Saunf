@@ -19,7 +19,10 @@ export function NotificationLink({ item }: { item: NotificationItem }) {
   return (
     <button
       type="button"
-      className={cn("flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50", !item.read_at && "bg-accent/40")}
+      className={cn(
+        "flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/50",
+        !item.read_at && "bg-accent/40",
+      )}
       onClick={async () => {
         if (!item.read_at) await markNotificationsRead([item.id]);
         if (key) router.push(`/tasks/${key}`);

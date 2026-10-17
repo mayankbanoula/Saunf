@@ -17,7 +17,11 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "da
   return (
     <Card className="px-4 py-3">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={tone === "danger" && value > 0 ? "text-xl font-semibold text-destructive" : "text-xl font-semibold"}>{value}</div>
+      <div
+        className={tone === "danger" && value > 0 ? "text-xl font-semibold text-destructive" : "text-xl font-semibold"}
+      >
+        {value}
+      </div>
     </Card>
   );
 }
@@ -30,7 +34,9 @@ async function PersonContent({ params, searchParams }: PageProps<"/team/[id]">) 
   const [{ data: member }, { data: workload }] = await Promise.all([
     supabase
       .from("workspace_members")
-      .select("user_id, role, is_active, joined_at, department:departments!workspace_members_workspace_id_department_id_fkey(id, name), profiles!workspace_members_user_id_fkey(full_name, email, job_title)")
+      .select(
+        "user_id, role, is_active, joined_at, department:departments!workspace_members_workspace_id_department_id_fkey(id, name), profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
+      )
       .eq("workspace_id", viewer.workspaceId)
       .eq("user_id", id)
       .maybeSingle(),

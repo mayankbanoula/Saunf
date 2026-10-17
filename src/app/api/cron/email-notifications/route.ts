@@ -52,8 +52,11 @@ export async function GET(request: NextRequest) {
   const failures: string[] = [];
   for (const n of pending ?? []) {
     const wsEnabled = Boolean(
-      (n.workspace_settings as unknown as { workspace_settings: { email_notifications_enabled: boolean } | null } | null)
-        ?.workspace_settings?.email_notifications_enabled,
+      (
+        n.workspace_settings as unknown as {
+          workspace_settings: { email_notifications_enabled: boolean } | null;
+        } | null
+      )?.workspace_settings?.email_notifications_enabled,
     );
     const recipient = n.recipient as { email: string; email_notifications: boolean } | null;
     if (!wsEnabled || !recipient?.email_notifications) {

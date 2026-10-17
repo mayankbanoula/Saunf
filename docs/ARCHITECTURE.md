@@ -5,23 +5,23 @@ Next.js App Router application backed by Supabase (PostgreSQL, Auth, Storage).
 
 ## 1. Stack (versions verified at development time, Oct 2026)
 
-| Concern        | Choice                                                         |
-| -------------- | -------------------------------------------------------------- |
-| Framework      | Next.js 16.4.2 (App Router, Cache Components, `proxy.ts`)      |
-| UI runtime     | React 19.3                                                     |
-| Language       | TypeScript 5, `strict: true`                                   |
-| Styling        | Tailwind CSS 4 (CSS-first config, tokens in `globals.css`)     |
-| Components     | shadcn/ui-style components (source in `src/components/ui`) on the `radix-ui` package |
-| Icons          | lucide-react                                                   |
-| Data / Auth    | Supabase Postgres + Supabase Auth via `@supabase/ssr` 0.12     |
-| Files          | Supabase Storage (private bucket `task-attachments`)           |
-| Validation     | Zod 4 (shared schemas in `src/lib/validation`)                 |
-| Forms          | React Hook Form + `@hookform/resolvers`                        |
-| Dates          | date-fns 4 + `@date-fns/tz`                                    |
-| Drag and drop  | dnd-kit                                                        |
-| Charts         | Recharts 3                                                     |
-| Scheduler      | `pg_cron` inside Postgres (due-soon / overdue reminders)       |
-| Tests          | Vitest (unit + RLS integration against local Supabase), Playwright (E2E) |
+| Concern       | Choice                                                                               |
+| ------------- | ------------------------------------------------------------------------------------ |
+| Framework     | Next.js 16.4.2 (App Router, Cache Components, `proxy.ts`)                            |
+| UI runtime    | React 19.3                                                                           |
+| Language      | TypeScript 5, `strict: true`                                                         |
+| Styling       | Tailwind CSS 4 (CSS-first config, tokens in `globals.css`)                           |
+| Components    | shadcn/ui-style components (source in `src/components/ui`) on the `radix-ui` package |
+| Icons         | lucide-react                                                                         |
+| Data / Auth   | Supabase Postgres + Supabase Auth via `@supabase/ssr` 0.12                           |
+| Files         | Supabase Storage (private bucket `task-attachments`)                                 |
+| Validation    | Zod 4 (shared schemas in `src/lib/validation`)                                       |
+| Forms         | React Hook Form + `@hookform/resolvers`                                              |
+| Dates         | date-fns 4 + `@date-fns/tz`                                                          |
+| Drag and drop | dnd-kit                                                                              |
+| Charts        | Recharts 3                                                                           |
+| Scheduler     | `pg_cron` inside Postgres (due-soon / overdue reminders)                             |
+| Tests         | Vitest (unit + RLS integration against local Supabase), Playwright (E2E)             |
 
 ## 2. High-level design
 
@@ -109,25 +109,25 @@ scripts/               bootstrap workspace/admin, demo seed
 
 See `supabase/migrations/*.sql` for the authoritative definition.
 
-| Table                 | Purpose |
-| --------------------- | ------- |
-| `workspaces`          | Organisation; `task_prefix`, `task_counter` |
-| `workspace_settings`  | Policies: creation/assignment/visibility, defaults, timezone, reminders, retention |
-| `profiles`            | 1:1 with `auth.users`; name, email, title, avatar, notification prefs |
-| `workspace_members`   | user ↔ workspace with `role`, `department_id`, `is_active` |
-| `departments`         | name, manager |
-| `invitations`         | pending invites (email, role, department, expiry, status) |
-| `projects`            | name, description, owner, status, dates, `is_private` |
-| `project_members`     | user ↔ project (`lead`/`member`) |
-| `tasks`               | current task state (one row per task) |
-| `task_collaborators`  | additional people on a task |
-| `task_assignments`    | complete, append-only assignment history |
-| `labels`, `task_labels` | workspace labels and their tasks |
-| `task_dependencies`   | "task A is blocked by task B" edges |
-| `task_comments`       | comments with soft delete and mentions |
-| `task_attachments`    | metadata for files in Storage |
-| `activity_events`     | append-only audit log (task, project and admin events) |
-| `notifications`       | in-app notifications, read state |
+| Table                   | Purpose                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `workspaces`            | Organisation; `task_prefix`, `task_counter`                                        |
+| `workspace_settings`    | Policies: creation/assignment/visibility, defaults, timezone, reminders, retention |
+| `profiles`              | 1:1 with `auth.users`; name, email, title, avatar, notification prefs              |
+| `workspace_members`     | user ↔ workspace with `role`, `department_id`, `is_active`                         |
+| `departments`           | name, manager                                                                      |
+| `invitations`           | pending invites (email, role, department, expiry, status)                          |
+| `projects`              | name, description, owner, status, dates, `is_private`                              |
+| `project_members`       | user ↔ project (`lead`/`member`)                                                   |
+| `tasks`                 | current task state (one row per task)                                              |
+| `task_collaborators`    | additional people on a task                                                        |
+| `task_assignments`      | complete, append-only assignment history                                           |
+| `labels`, `task_labels` | workspace labels and their tasks                                                   |
+| `task_dependencies`     | "task A is blocked by task B" edges                                                |
+| `task_comments`         | comments with soft delete and mentions                                             |
+| `task_attachments`      | metadata for files in Storage                                                      |
+| `activity_events`       | append-only audit log (task, project and admin events)                             |
+| `notifications`         | in-app notifications, read state                                                   |
 
 Status (`todo`, `in_progress`, `in_review`, `done`) and priority (`low`, `medium`,
 `high`, `urgent`) are Postgres enums. "Blocked" is a separate flag
@@ -139,13 +139,13 @@ Separate timestamp concepts on `tasks`: `created_at` (immutable), `assigned_at`
 
 ## 5. Notifications and reminders
 
-* Assignment, reassignment, comment, mention, completion, reopen and
+- Assignment, reassignment, comment, mention, completion, reopen and
   "review requested" (status → In review) notifications are created by triggers.
   Minor field edits do not notify.
-* Due-soon and overdue notifications are created by `generate_due_notifications()`,
+- Due-soon and overdue notifications are created by `generate_due_notifications()`,
   scheduled every 15 minutes by `pg_cron` (migration `…_cron.sql`). A unique index
   makes it idempotent (one due-soon and one overdue notice per task per due date).
-* Email: notification emails are optional. `/api/cron/email-notifications` sends
+- Email: notification emails are optional. `/api/cron/email-notifications` sends
   unsent notifications through Resend when `RESEND_API_KEY` and `CRON_SECRET` are
   configured; otherwise it reports that email is not configured. Auth emails
   (invite, password reset) are sent by Supabase Auth's SMTP configuration.

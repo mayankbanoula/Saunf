@@ -6,7 +6,14 @@ import { toast } from "sonner";
 
 import { assignTask, updateTask } from "@/actions/tasks";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field, FormError } from "@/components/ui/form";
 import { Input, NativeSelect, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/overlays";
@@ -22,23 +29,33 @@ import {
 } from "@/lib/tasks/constants";
 import type { UpdateTaskInput } from "@/lib/validation/task";
 
-/** Run an update with optimistic local state and rollback on failure. */
+/**
+ * Optimistic field: shows the new value immediately; if the server rejects it the
+ * transition ends without new server props, so React rolls the value back.
+ */
 function useOptimisticField<T>(serverValue: T) {
-  const [value, setValue] = React.useState(serverValue);
+  const [value, setOptimistic] = React.useOptimistic(serverValue);
   const [pending, startTransition] = React.useTransition();
-  React.useEffect(() => setValue(serverValue), [serverValue]);
   const commit = (next: T, run: () => Promise<{ ok: boolean; error?: string }>, success?: string) => {
-    const previous = value;
-    setValue(next);
     startTransition(async () => {
+      setOptimistic(next);
       const res = await run();
-      if (!res.ok) {
-        setValue(previous);
-        toast.error(res.error ?? "Update failed");
-      } else if (success) toast.success(success);
+      if (!res.ok) toast.error(res.error ?? "Update failed");
+      else if (success) toast.success(success);
     });
   };
   return { value, pending, commit };
+}
+
+/** Reset local draft state when the server value changes (React's "adjust state during render"). */
+function useDraft<T>(serverValue: T) {
+  const [draft, setDraft] = React.useState(serverValue);
+  const [seen, setSeen] = React.useState(serverValue);
+  if (!Object.is(seen, serverValue)) {
+    setSeen(serverValue);
+    setDraft(serverValue);
+  }
+  return [draft, setDraft] as const;
 }
 
 export function StatusControl({ taskId, status, disabled }: { taskId: string; status: TaskStatus; disabled: boolean }) {
@@ -66,7 +83,15 @@ export function StatusControl({ taskId, status, disabled }: { taskId: string; st
   );
 }
 
-export function PriorityControl({ taskId, priority, disabled }: { taskId: string; priority: TaskPriority; disabled: boolean }) {
+export function PriorityControl({
+  taskId,
+  priority,
+  disabled,
+}: {
+  taskId: string;
+  priority: TaskPriority;
+  disabled: boolean;
+}) {
   const { value, pending, commit } = useOptimisticField(priority);
   return (
     <NativeSelect
@@ -101,13 +126,9 @@ export function DueDateControl({
   startDate: string | null;
   disabled: boolean;
 }) {
-  const [date, setDate] = React.useState(dueDate ?? "");
-  const [time, setTime] = React.useState(dueTime?.slice(0, 5) ?? "");
+  const [date, setDate] = useDraft(dueDate ?? "");
+  const [time, setTime] = useDraft(dueTime?.slice(0, 5) ?? "");
   const [pending, startTransition] = React.useTransition();
-  React.useEffect(() => {
-    setDate(dueDate ?? "");
-    setTime(dueTime?.slice(0, 5) ?? "");
-  }, [dueDate, dueTime]);
 
   const save = (nextDate: string, nextTime: string) => {
     const patch: UpdateTaskInput = { due_date: nextDate || null, due_time: nextDate ? nextTime || null : null };
@@ -151,10 +172,17 @@ export function DueDateControl({
   );
 }
 
-export function ProgressControl({ taskId, progress, disabled }: { taskId: string; progress: number; disabled: boolean }) {
-  const [draft, setDraft] = React.useState(progress);
+export function ProgressControl({
+  taskId,
+  progress,
+  disabled,
+}: {
+  taskId: string;
+  progress: number;
+  disabled: boolean;
+}) {
   const { value, pending, commit } = useOptimisticField(progress);
-  React.useEffect(() => setDraft(value), [value]);
+  const [draft, setDraft] = useDraft(value);
   const save = () => {
     if (draft === value) return;
     commit(draft, () => updateTask(taskId, { progress: draft }), `Progress updated to ${draft}%`);
@@ -205,7 +233,10 @@ export function BlockedControl({
 
   const submit = (blocked: boolean) =>
     startTransition(async () => {
-      const res = await updateTask(taskId, { is_blocked: blocked, blocker_description: blocked ? text.trim() || null : null });
+      const res = await updateTask(taskId, {
+        is_blocked: blocked,
+        blocker_description: blocked ? text.trim() || null : null,
+      });
       if (!res.ok) {
         setError(res.error);
         toast.error(res.error);
@@ -233,7 +264,9 @@ export function BlockedControl({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Mark as blocked</DialogTitle>
-            <DialogDescription>The task keeps its status. Describe what&apos;s blocking it so others can help.</DialogDescription>
+            <DialogDescription>
+              The task keeps its status. Describe what&apos;s blocking it so others can help.
+            </DialogDescription>
           </DialogHeader>
           <FormError message={error} />
           <Field label="What's blocking this task?" htmlFor="blocker">

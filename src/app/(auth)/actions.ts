@@ -9,11 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = { error?: string; message?: string; fieldErrors?: Record<string, string> } | null;
 
-const emailSchema = z.email("Enter a valid email address").transform((e) => e.trim().toLowerCase());
-const passwordSchema = z
-  .string()
-  .min(8, "Use at least 8 characters")
-  .max(72, "Use at most 72 characters");
+const emailSchema = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address"));
+const passwordSchema = z.string().min(8, "Use at least 8 characters").max(72, "Use at most 72 characters");
 
 export async function signIn(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const parsed = z
@@ -100,7 +97,10 @@ export async function updatePassword(_prev: AuthFormState, formData: FormData): 
   const fullName = String(formData.get("full_name") ?? "").trim();
   if (formData.get("mode") === "invite") {
     if (fullName) {
-      await supabase.from("profiles").update({ full_name: fullName.slice(0, 120) }).eq("id", claims.claims.sub);
+      await supabase
+        .from("profiles")
+        .update({ full_name: fullName.slice(0, 120) })
+        .eq("id", claims.claims.sub);
     }
     await supabase.rpc("accept_invitation");
   }

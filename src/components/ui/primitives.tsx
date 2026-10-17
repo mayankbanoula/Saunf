@@ -97,11 +97,7 @@ export function Separator({
   );
 }
 
-export function Progress({
-  className,
-  value,
-  ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+export function Progress({ className, value, ...props }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
   const v = Math.max(0, Math.min(100, value ?? 0));
   return (
     <ProgressPrimitive.Root

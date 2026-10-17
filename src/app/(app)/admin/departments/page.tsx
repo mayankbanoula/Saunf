@@ -21,8 +21,13 @@ async function Departments() {
       .eq("is_active", true),
   ]);
   if (error) throw new Error(`Could not load departments: ${error.message}`);
-  const people = (members ?? []).map((m) => ({ id: m.user_id, name: displayName(m.profiles) })).sort((a, b) => a.name.localeCompare(b.name));
-  const rows = (departments ?? []).map((d) => ({ ...d, member_count: (members ?? []).filter((m) => m.department_id === d.id).length }));
+  const people = (members ?? [])
+    .map((m) => ({ id: m.user_id, name: displayName(m.profiles) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const rows = (departments ?? []).map((d) => ({
+    ...d,
+    member_count: (members ?? []).filter((m) => m.department_id === d.id).length,
+  }));
   return <DepartmentsManager departments={rows} people={people} />;
 }
 
