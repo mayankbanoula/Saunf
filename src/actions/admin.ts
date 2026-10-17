@@ -124,13 +124,16 @@ export async function revokeInvitation(invitationId: string): Promise<ActionResu
     if (error) return fail(dbErrorMessage(error));
     if (!inv) return fail("Only pending invitations can be revoked.");
     if (inv.accepted_user_id) {
-      // The invited account was created but never used: remove its access.
+      // The invitation created an account that was never completed. Delete it rather than
+      // banning it, so the person can still sign up (or be invited) again later. Opening the
+      // invite link counts as a sign-in, so last_sign_in_at can't tell "never used" apart.
       await supabase.from("workspace_members").update({ is_active: false }).eq("user_id", inv.accepted_user_id);
       const admin = createAdminClient();
-      const { data: user } = await admin.auth.admin.getUserById(inv.accepted_user_id);
-      const neverUsed = user.user && !user.user.last_sign_in_at;
-      const deleted = neverUsed ? !(await admin.auth.admin.deleteUser(inv.accepted_user_id)).error : false;
-      if (!deleted) await admin.auth.admin.updateUserById(inv.accepted_user_id, { ban_duration: BAN_FOREVER });
+      const { error: deleteError } = await admin.auth.admin.deleteUser(inv.accepted_user_id);
+      if (deleteError) {
+        console.error("[admin] deleting revoked invitee failed", deleteError.message);
+        await admin.auth.admin.updateUserById(inv.accepted_user_id, { ban_duration: BAN_FOREVER });
+      }
     }
     refresh();
     return ok(null);
