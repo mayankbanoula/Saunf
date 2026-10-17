@@ -13,11 +13,11 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, [`docs/SECURI
 
 ## Screenshots
 
-| Dashboard | Board |
-| --- | --- |
-| ![Dashboard](docs/screenshots/02-dashboard.png) | ![Kanban board](docs/screenshots/04-board.png) |
-| **Task detail** | **Reports** |
-| ![Task detail](docs/screenshots/05-task-detail.png) | ![Reports](docs/screenshots/08-reports.png) |
+| Dashboard                                           | Board                                          |
+| --------------------------------------------------- | ---------------------------------------------- |
+| ![Dashboard](docs/screenshots/02-dashboard.png)     | ![Kanban board](docs/screenshots/04-board.png) |
+| **Task detail**                                     | **Reports**                                    |
+| ![Task detail](docs/screenshots/05-task-detail.png) | ![Reports](docs/screenshots/08-reports.png)    |
 
 More in [`docs/screenshots/`](docs/screenshots/) (captured with the local demo seed).
 
