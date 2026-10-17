@@ -15,7 +15,7 @@ _Last updated: 17 Oct 2026_
 - [x] Next.js App Router, strict TypeScript, Tailwind CSS 4 design tokens, shadcn-style Radix components
 - [x] Supabase migrations: schema, RLS on every table, triggers, RPCs, private storage bucket, `pg_cron`
 - [x] Supabase Auth: login, logout, forgot/reset password, session refresh in `proxy.ts`
-- [x] Employee self sign-up (`/signup`), off by default; admins control allowed email domains and optional approval. Invitations and admin-created accounts also supported.
+- [x] Self sign-up (`/signup`), on by default with no approval; the first sign-up on a fresh installation becomes admin. Admins can optionally restrict email domains, require approval, or invite people instead.
 - [x] Data-access layer (`getClaims` verification, active membership check); inactive users are redirected and lose RLS access
 - [x] App shell: collapsible sidebar, mobile drawer, global search (⌘K), quick create, notifications, user menu
 
@@ -45,7 +45,7 @@ _Last updated: 17 Oct 2026_
 
 **Phase 6 — Hardening**
 
-- [x] 46 unit tests, 58 RLS/workflow integration tests, 20 Playwright end-to-end tests (all passing)
+- [x] 46 unit tests, 60 RLS/workflow integration tests, 21 Playwright end-to-end tests (all passing)
 - [x] Lint (0 problems), typecheck, Prettier, production build
 - [x] Mobile layout verified at 390 px: no horizontal overflow on the main pages (tested)
 - [x] README, deployment, backup and retention guide, CI workflow
@@ -59,9 +59,9 @@ _Last updated: 17 Oct 2026_
 | `npm run typecheck`                                          | ✅                                        |
 | `npm run format:check`                                       | ✅                                        |
 | `npm run test:unit`                                          | ✅ 46 passed                              |
-| `npm run test:integration`                                   | ✅ 58 passed (local Supabase in Docker)   |
+| `npm run test:integration`                                   | ✅ 60 passed (local Supabase in Docker)   |
 | `npm run build`                                              | ✅                                        |
-| `npm run test:e2e`                                           | ✅ 20 passed (production build, Chromium) |
+| `npm run test:e2e`                                           | ✅ 21 passed (production build, Chromium) |
 | `npm run db:reset`, `npm run bootstrap`, `npm run seed:demo` | ✅                                        |
 | `npm audit --omit=dev`                                       | ✅ 0 vulnerabilities                      |
 
@@ -84,3 +84,4 @@ The CI workflow (`.github/workflows/ci.yml`) mirrors these commands but has not 
 - **Board and calendar caps.** The board shows at most 300 tasks and the calendar at most 600 per range, with a notice when truncated.
 - **npm config.** `.npmrc` sets `legacy-peer-deps=true` to work around an npm 10 resolver crash on Vitest's optional peers.
 - **Dev-only audit advisory.** `npm audit` reports `braces` (via `eslint-config-next` → `fast-glob`). npm's suggested "fix" is downgrading to Next 14 tooling, so it was left in place. It doesn't ship to production.
+- **Open sign-up by default.** Anyone who can reach `/signup` can join as an employee, which is what this deployment asked for. With Supabase "Confirm email" off, the address isn't verified. To tighten it, set allowed email domains in Workspace settings, and turn on email confirmation once SMTP is configured.

@@ -276,3 +276,47 @@ test("with approval required, a sign-up waits until an admin approves it", async
     if (data) await service.auth.admin.deleteUser(data.id).catch(() => undefined);
   }
 });
+
+test("a new employee signs up, lands on the dashboard, and assigns a task to a colleague", async ({ page }) => {
+  // Default behaviour: open sign-up, any email, no approval.
+  await service
+    .from("workspace_settings")
+    .update({ self_signup_enabled: true, signup_allowed_domains: [], signup_requires_approval: false })
+    .eq("workspace_id", w.ws);
+  const email = `riya.${Date.now()}@anywhere.test`;
+  try {
+    await page.goto("/signup");
+    await page.getByLabel("Full name").fill("Riya Newjoiner");
+    await page.getByLabel("Work email").fill(email);
+    await page.getByLabel("Password").fill("Riya-pass-123");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByRole("heading", { name: "Welcome back, Riya" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Create task" }).click();
+    const dialog = page.getByRole("dialog");
+    const title = `Share the vendor list with Esha ${Date.now()}`;
+    await dialog.getByLabel("Title").fill(title);
+    await dialog.getByLabel("Assignee").selectOption({ label: "Esha Employee" });
+    await dialog.getByRole("button", { name: "Create task" }).click();
+    await expect(dialog).toBeHidden();
+
+    const { data: task } = await service
+      .from("tasks")
+      .select("assignee_id, creator:profiles!tasks_creator_profile_fkey(email)")
+      .eq("title", title)
+      .single();
+    expect(task!.assignee_id).toBe(w.emp1.id);
+    expect(task!.creator?.email).toBe(email);
+
+    // And they can sign out and back in normally.
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
+    await login(page, email, "Riya-pass-123");
+    await expect(page.getByRole("heading", { name: "Welcome back, Riya" })).toBeVisible();
+  } finally {
+    await service.from("workspace_settings").update({ self_signup_enabled: false }).eq("workspace_id", w.ws);
+    const { data } = await service.from("profiles").select("id").eq("email", email).maybeSingle();
+    if (data) await service.auth.admin.deleteUser(data.id).catch(() => undefined);
+  }
+});

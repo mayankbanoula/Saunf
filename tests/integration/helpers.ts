@@ -16,7 +16,7 @@ config({ path: ".env.local", quiet: true });
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const SECRET = process.env.SUPABASE_SECRET_KEY;
-const DB_URL = process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+export const DB_URL = process.env.SUPABASE_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 export const PASSWORD = "Test-pass-123!";
 
 if (!ANON || !SECRET) {
@@ -63,7 +63,10 @@ export async function createWorkspace(
     .select("id")
     .single();
   if (error) throw error;
-  const { error: sErr } = await service.from("workspace_settings").insert({ workspace_id: data.id, ...overrides });
+  // Test workspaces are closed to self sign-up unless a test opts in, so sign-ups land predictably.
+  const { error: sErr } = await service
+    .from("workspace_settings")
+    .insert({ workspace_id: data.id, self_signup_enabled: false, ...overrides });
   if (sErr) throw sErr;
   created.workspaces.push(data.id);
   return data.id;

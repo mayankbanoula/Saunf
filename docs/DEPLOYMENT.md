@@ -40,7 +40,9 @@ Saunf runs on Vercel, with Supabase as the database, auth and file store. These 
    | `CRON_SECRET`                          | a long random string, if you want notification emails      |
    | `RESEND_API_KEY`, `EMAIL_FROM`         | optional, for notification emails                          |
 
-3. Deploy, then create the first admin from your machine using the production values:
+3. Deploy, then open `https://<your-app>/signup` and create your account. On a fresh database the first sign-up
+   creates the workspace and becomes its **admin**. Rename the workspace in **Admin → Workspace settings**.
+   Alternatively, create the first admin from your machine using the production values:
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=… SUPABASE_SECRET_KEY=… NEXT_PUBLIC_SITE_URL=… \
      npx tsx scripts/bootstrap.ts --workspace "Acme" --slug acme --email you@acme.com --name "You"
