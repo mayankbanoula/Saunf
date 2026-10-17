@@ -208,3 +208,71 @@ test("users created by the helper match the app's invitation flow", async () => 
   const { data } = await service.from("workspace_members").select("role, is_active").eq("user_id", u.id).single();
   expect(data).toEqual({ role: "employee", is_active: true });
 });
+
+test("employees can sign up with a work email; other domains are refused", async ({ page }) => {
+  const domain = `e2e-${Date.now()}.test`;
+  await service
+    .from("workspace_settings")
+    .update({ self_signup_enabled: true, signup_allowed_domains: [domain], signup_requires_approval: false })
+    .eq("workspace_id", w.ws);
+  try {
+    await page.goto("/login");
+    await page.getByRole("link", { name: "Create an account" }).click();
+    await expect(page).toHaveURL(/\/signup/);
+
+    await page.getByLabel("Full name").fill("Outside Person");
+    await page.getByLabel("Work email").fill(`someone@gmail-${Date.now()}.test`);
+    await page.getByLabel("Password").fill("Signup-pass-1");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page.locator("form [role=alert]")).toContainText("Sign-up isn't open for this email address");
+
+    const email = `sam.signup@${domain}`;
+    await page.getByLabel("Full name").fill("Sam Signup");
+    await page.getByLabel("Work email").fill(email);
+    await page.getByLabel("Password").fill("Signup-pass-1");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByRole("heading", { name: "Welcome back, Sam" })).toBeVisible();
+
+    const { data } = await service.from("profiles").select("id").eq("email", email).single();
+    const { data: m } = await service.from("workspace_members").select("role").eq("user_id", data!.id).single();
+    expect(m!.role).toBe("employee");
+    await service.auth.admin.deleteUser(data!.id).catch(() => undefined);
+  } finally {
+    await service.from("workspace_settings").update({ self_signup_enabled: false }).eq("workspace_id", w.ws);
+  }
+});
+
+test("with approval required, a sign-up waits until an admin approves it", async ({ page, browser }) => {
+  const domain = `e2e-approve-${Date.now()}.test`;
+  await service
+    .from("workspace_settings")
+    .update({ self_signup_enabled: true, signup_allowed_domains: [domain], signup_requires_approval: true })
+    .eq("workspace_id", w.ws);
+  const email = `pat.pending@${domain}`;
+  try {
+    await page.goto("/signup");
+    await page.getByLabel("Full name").fill("Pat Pending");
+    await page.getByLabel("Work email").fill(email);
+    await page.getByLabel("Password").fill("Signup-pass-1");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page.getByText("waiting for an administrator to approve it")).toBeVisible();
+
+    const admin = await (await browser.newContext()).newPage();
+    await login(admin, w.admin.email);
+    await admin.goto("/admin");
+    await expect(admin.getByText("Awaiting approval", { exact: true })).toBeVisible();
+    await admin
+      .getByRole("row", { name: /Pat Pending/ })
+      .getByRole("button", { name: "Approve" })
+      .click();
+    await expect(admin.getByText("Member approved")).toBeVisible();
+
+    await login(page, email, "Signup-pass-1");
+    await expect(page.getByRole("heading", { name: "Welcome back, Pat" })).toBeVisible();
+  } finally {
+    await service.from("workspace_settings").update({ self_signup_enabled: false }).eq("workspace_id", w.ws);
+    const { data } = await service.from("profiles").select("id").eq("email", email).maybeSingle();
+    if (data) await service.auth.admin.deleteUser(data.id).catch(() => undefined);
+  }
+});

@@ -47,6 +47,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
+  Alert,
   CardTitle,
   UserAvatar,
 } from "@/components/ui/primitives";
@@ -118,6 +119,7 @@ export type MemberRow = {
   is_active: boolean;
   joined_at: string;
   pending_invite: boolean;
+  awaiting_approval: boolean;
 };
 
 export function MembersTable({
@@ -154,7 +156,7 @@ export function MembersTable({
           {members.map((m) => {
             const self = m.user_id === viewerId;
             return (
-              <TableRow key={m.user_id} className={cn(!m.is_active && "opacity-60")}>
+              <TableRow key={m.user_id} className={cn(!m.is_active && !m.awaiting_approval && "opacity-60")}>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <UserAvatar name={m.full_name || m.email} id={m.user_id} />
@@ -163,6 +165,7 @@ export function MembersTable({
                         {m.full_name || m.email}
                         {self ? <Badge variant="outline">You</Badge> : null}
                         {m.pending_invite ? <Badge variant="warning">Invite pending</Badge> : null}
+                        {m.awaiting_approval ? <Badge variant="warning">Awaiting approval</Badge> : null}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">{m.email}</div>
                     </div>
@@ -216,6 +219,15 @@ export function MembersTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
+                    {m.awaiting_approval ? (
+                      <Button
+                        size="xs"
+                        disabled={busy === m.user_id}
+                        onClick={() => run(m.user_id, () => setMemberActive(m.user_id, true), "Member approved")}
+                      >
+                        Approve
+                      </Button>
+                    ) : null}
                     <Switch
                       aria-label={m.is_active ? `Deactivate ${m.full_name}` : `Reactivate ${m.full_name}`}
                       checked={m.is_active}
@@ -624,19 +636,22 @@ export function SettingsForm({ initial, timezones }: { initial: SettingsIn; time
     employees_can_create_tasks: useWatch({ control, name: "employees_can_create_tasks" }),
     due_reminders_enabled: useWatch({ control, name: "due_reminders_enabled" }),
     email_notifications_enabled: useWatch({ control, name: "email_notifications_enabled" }),
+    self_signup_enabled: useWatch({ control, name: "self_signup_enabled" }),
+    signup_requires_approval: useWatch({ control, name: "signup_requires_approval" }),
   };
+  const domainsText = useWatch({ control, name: "signup_allowed_domains" });
+  const openToAnyone =
+    flags.self_signup_enabled && !flags.signup_requires_approval && !String(domainsText ?? "").trim();
   const onSubmit = async (v: SettingsOut) => {
     setError(null);
-    const res = await updateWorkspaceSettings(v);
+    // The server re-validates from the raw form shape (domains as text).
+    const input: SettingsIn = { ...v, signup_allowed_domains: v.signup_allowed_domains.join(", ") };
+    const res = await updateWorkspaceSettings(input);
     if (!res.ok) return setError(res.error);
     toast.success("Settings saved");
-    form.reset(v as SettingsIn);
+    form.reset(input);
   };
-  const toggle = (
-    name: "employees_can_create_tasks" | "due_reminders_enabled" | "email_notifications_enabled",
-    label: string,
-    hint: string,
-  ) => (
+  const toggle = (name: keyof typeof flags, label: string, hint: string) => (
     <div className="flex items-start justify-between gap-4">
       <label htmlFor={name} className="text-sm">
         <span className="font-medium">{label}</span>
@@ -668,6 +683,43 @@ export function SettingsForm({ initial, timezones }: { initial: SettingsIn; time
               ))}
             </NativeSelect>
           </Field>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Sign-up</CardTitle>
+            <CardDescription>
+              Let employees create their own accounts at /signup. New accounts always join as Employee; you can change
+              roles in Members.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {toggle("self_signup_enabled", "Allow employees to sign up", "When off, people can only join by invitation.")}
+          {flags.self_signup_enabled ? (
+            <>
+              <Field
+                label="Allowed email domains"
+                htmlFor="signup_allowed_domains"
+                hint="Only addresses at these domains can sign up, e.g. acme.com, acme.in. Leave empty to allow any address."
+                error={formState.errors.signup_allowed_domains?.message}
+              >
+                <Input placeholder="yourcompany.com" {...register("signup_allowed_domains")} />
+              </Field>
+              {toggle(
+                "signup_requires_approval",
+                "Require admin approval",
+                "New sign-ups appear in Members as “Awaiting approval” and can sign in once you activate them.",
+              )}
+              {openToAnyone ? (
+                <Alert variant="warning">
+                  Anyone with any email address could create an account and see workspace tasks. Add your company domain
+                  or require approval.
+                </Alert>
+              ) : null}
+            </>
+          ) : null}
         </CardContent>
       </Card>
       <Card>

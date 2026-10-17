@@ -7,7 +7,8 @@ Saunf is a private task-management workspace for teams inside one organisation. 
 - **Collaboration.** Comments with @mentions, file attachments in private storage, and in-app notifications. Due-soon and overdue reminders run on a schedule.
 - **History.** An append-only activity log that reads like a timeline ("Rahul changed the status from To do to In progress — 11:05 AM"), plus a complete assignment history.
 - **Organisation.** Projects (public or private), departments, employee directory, dashboard, reports and an admin panel.
-- **Security.** Accounts are created by invitation only. Admin, manager and employee roles and the workspace policies are enforced by PostgreSQL Row Level Security and triggers, not by hiding buttons.
+- **Accounts.** Employees can sign up at `/signup` when an admin turns it on. Admins can limit sign-up to company email domains and require approval. Invitations and admin-created accounts work too.
+- **Security.** Admin, manager and employee roles and the workspace policies are enforced by PostgreSQL Row Level Security and triggers, not by hiding buttons.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, [`docs/SECURITY.md`](docs/SECURITY.md) for the permission matrix, [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for production setup and backups, and [`CHECKLIST.md`](CHECKLIST.md) for status and known limitations.
 
@@ -59,7 +60,7 @@ Fill in `.env.local` with the values from `npx supabase status`:
 
 ### 3. Create the workspace and first admin
 
-Public sign-up is disabled, so the first admin has to be created from the command line:
+Self sign-up always creates employees, so the first admin is created from the command line:
 
 ```bash
 npm run bootstrap -- --workspace "Acme Ltd" --slug acme --prefix SAU \
@@ -112,12 +113,12 @@ npm run build && npm run test:e2e   # Playwright against the production build + 
 
 - Integration tests create isolated workspaces and users, then clean up after themselves. They refuse to run against a non-local Supabase URL.
 - To use an already-installed Chromium for end-to-end tests instead of `npx playwright install`, set `PLAYWRIGHT_CHROMIUM_PATH=/path/to/chromium`.
-- The test suites cover login and logout, protected routes, invite and password-reset emails, role permissions, workspace isolation, task creation (including concurrent ID generation), assignment policy, reassignment history, status changes, completion and reopening, deadline and progress validation, archiving and restoring, the activity timeline and its append-only guarantees, comment permissions, @mentions, attachment access, notification visibility, the reminder scheduler, inactive users, the Kanban drag, and the mobile layout.
+- The test suites cover login and logout, self sign-up (domain rules and approval), protected routes, invite and password-reset emails, role permissions, workspace isolation, task creation (including concurrent ID generation), assignment policy, reassignment history, status changes, completion and reopening, deadline and progress validation, archiving and restoring, the activity timeline and its append-only guarantees, comment permissions, @mentions, attachment access, notification visibility, the reminder scheduler, inactive users, the Kanban drag, and the mobile layout.
 
 ## Deployment (summary)
 
 1. Create a Supabase project. Enable the `pg_cron` extension, then run `npm run db:push`.
-2. In Supabase Auth settings: disable sign-ups, set the Site URL and redirect URLs to your app, set the minimum password length to 8, configure SMTP, and paste the templates from `supabase/templates/` into the **Invite** and **Reset password** templates.
+2. In Supabase Auth settings: allow sign-ups (needed for `/signup`), set the Site URL and redirect URLs to your app, set the minimum password length to 8, and configure SMTP. Once SMTP is set up you can also paste the templates from `supabase/templates/`. Both custom and default templates work.
 3. Deploy to Vercel with the environment variables above. `vercel.json` schedules the email cron. Note that the Hobby plan only allows daily crons.
 4. Run `npm run bootstrap` against production, using production env vars, to create the first admin.
 

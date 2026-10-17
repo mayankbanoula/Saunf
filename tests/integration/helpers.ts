@@ -103,6 +103,11 @@ export async function createUser(
   return { id: data.user.id, email, client };
 }
 
+/** Register an auth user created outside the helpers (e.g. by self sign-up) for cleanup. */
+export function trackUser(id: string) {
+  created.users.push(id);
+}
+
 export async function cleanup() {
   // Audit tables are append-only; the purge flag is the sanctioned way to remove test data.
   const db = new pg.Client({ connectionString: DB_URL });

@@ -12,6 +12,80 @@ export type AuthFormState = { error?: string; message?: string; fieldErrors?: Re
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address"));
 const passwordSchema = z.string().min(8, "Use at least 8 characters").max(72, "Use at most 72 characters");
 
+type Access = "active" | "pending" | "deactivated" | "none";
+
+const ACCESS_MESSAGE: Record<Exclude<Access, "active">, string> = {
+  pending: "Your account is waiting for an administrator to approve it. You'll be able to sign in once it's approved.",
+  deactivated: "This account has been deactivated. Contact your administrator.",
+  none: "Your account doesn't have access to a workspace. Contact your administrator.",
+};
+
+/** The caller's own membership state (users can always read their own membership row). */
+async function membershipAccess(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<Access> {
+  const { data } = await supabase
+    .from("workspace_members")
+    .select("is_active, deactivated_at")
+    .eq("user_id", userId)
+    .order("joined_at");
+  if (!data?.length) return "none";
+  if (data.some((m) => m.is_active)) return "active";
+  return data.some((m) => m.deactivated_at === null) ? "pending" : "deactivated";
+}
+
+const signUpSchema = z.object({
+  full_name: z.string().trim().min(1, "Enter your name").max(120),
+  email: emailSchema,
+  password: passwordSchema,
+});
+
+export async function signUp(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const parsed = signUpSchema.safeParse({
+    full_name: formData.get("full_name"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({
+    email: parsed.data.email,
+    password: parsed.data.password,
+    options: {
+      data: { full_name: parsed.data.full_name },
+      emailRedirectTo: `${publicEnv.siteUrl}/auth/confirm?next=/dashboard`,
+    },
+  });
+  if (error) {
+    // The database rejects addresses that no workspace has opened sign-up to.
+    if (error.code === "unexpected_failure" || /database error/i.test(error.message)) {
+      return {
+        error: "Sign-up isn't open for this email address. Use your work email, or ask an admin to invite you.",
+      };
+    }
+    if (error.code === "user_already_exists")
+      return { error: "An account with this email already exists. Sign in instead." };
+    if (error.code === "signup_disabled") return { error: "Sign-up is turned off. Ask an admin to invite you." };
+    if (error.code === "weak_password") return { error: "That password is too weak. Try a longer one." };
+    if (error.status === 429) return { error: "Too many attempts. Please wait a minute and try again." };
+    console.error("[auth] signUp failed", error.code, error.message);
+    return { error: "Could not create your account. Please try again." };
+  }
+
+  // Email confirmation is on: Supabase sends a link and returns no session.
+  if (!data.session || !data.user) {
+    return {
+      message: `We've sent a confirmation link to ${parsed.data.email}. Open it to finish creating your account.`,
+    };
+  }
+
+  const access = await membershipAccess(supabase, data.user.id);
+  if (access !== "active") {
+    await supabase.auth.signOut();
+    return { message: ACCESS_MESSAGE[access] };
+  }
+  redirect("/dashboard");
+}
+
 export async function signIn(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const parsed = z
     .object({ email: emailSchema, password: z.string().min(1, "Enter your password") })
@@ -27,19 +101,16 @@ export async function signIn(_prev: AuthFormState, formData: FormData): Promise<
     if (error?.code === "user_banned") {
       return { error: "This account has been deactivated. Contact your administrator." };
     }
+    if (error?.code === "email_not_confirmed") {
+      return { error: "Confirm your email address first — check your inbox for the link." };
+    }
     return { error: "Incorrect email or password." };
   }
 
-  const { data: member } = await supabase
-    .from("workspace_members")
-    .select("is_active")
-    .eq("user_id", data.user.id)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
-  if (!member) {
+  const access = await membershipAccess(supabase, data.user.id);
+  if (access !== "active") {
     await supabase.auth.signOut();
-    return { error: "Your account doesn't have access to a workspace. Contact your administrator." };
+    return { error: ACCESS_MESSAGE[access] };
   }
 
   redirect(safeNextPath(formData.get("next")));

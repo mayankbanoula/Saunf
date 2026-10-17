@@ -14,12 +14,16 @@ Saunf runs on Vercel, with Supabase as the database, auth and file store. These 
    ```
    Check the result in **Database → Cron Jobs**: a job named `saunf-scheduled-jobs` runs every 15 minutes.
 4. **Authentication → Sign In / Providers:**
-   - Turn off **Allow new users to sign up**. Saunf is invite-only, and admin invites still work.
-   - Keep the **Email** provider enabled. You can leave **Confirm email** on, because invites and admin-created accounts are pre-confirmed.
+   - Keep **Allow new users to sign up** on. The app's `/signup` page needs it. Who may actually join is decided by
+     Saunf's own workspace settings (below), which the database enforces.
+   - Keep the **Email** provider enabled.
+   - **Confirm email:** leave it on once SMTP works, so people must prove they own the address. Supabase's built-in
+     sender only delivers to your Supabase team's own addresses. Until SMTP is set up, either turn confirmation off and
+     turn on **Require admin approval** in Saunf, or add employees from the admin panel with a temporary password.
    - Set the minimum password length to at least 8.
 5. **Authentication → URL Configuration:** set the Site URL to your production URL (for example `https://saunf.example.com`), and add it plus `https://saunf.example.com/**` to the redirect URLs.
-6. **Authentication → Emails → SMTP:** configure your company's SMTP or a provider. Supabase's built-in sender is rate-limited and meant only for testing.
-7. **Authentication → Email Templates:** replace the **Invite user** and **Reset password** templates with the contents of `supabase/templates/invite.html` and `supabase/templates/recovery.html`. They link to `/auth/confirm?token_hash=…`, which the app verifies on the server. Without them, invite and reset links won't work.
+6. **Authentication → Emails → SMTP:** configure your company's SMTP or a provider. This is needed for sign-up confirmation, invitations and password resets to reach employees.
+7. **Authentication → Email Templates (optional, needs SMTP):** you can replace the **Invite user**, **Reset password** and **Confirm signup** templates with branded ones. `supabase/templates/` has invite and recovery versions. The app also works with Supabase's default templates.
 8. **Project Settings → API:** copy the project URL, the publishable key and the secret key for the next step.
 
 ## 2. Vercel project
@@ -79,7 +83,7 @@ Tasks are archived, never deleted. The workspace setting **Auto-archive complete
 
 ## 6. Operational checklist
 
-- [ ] Sign-ups disabled, SMTP configured, and email templates replaced
+- [ ] SMTP configured; in Saunf **Admin → Workspace settings → Sign-up**, sign-up enabled with your company domain (and approval if you want it)
 - [ ] `pg_cron` job visible and running (check **Database → Cron Jobs → History**)
 - [ ] Secret key set only in server environment variables
 - [ ] First admin created, and a second admin added so there is a backup admin

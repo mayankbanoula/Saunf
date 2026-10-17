@@ -7,7 +7,7 @@ import { Field, FormError, SubmitButton } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/primitives";
 
-import { requestPasswordReset, signIn, updatePassword, type AuthFormState } from "./actions";
+import { requestPasswordReset, signIn, signUp, updatePassword, type AuthFormState } from "./actions";
 
 export function LoginForm({ next, notice }: { next?: string; notice?: string }) {
   const [state, action] = useActionState<AuthFormState, FormData>(signIn, null);
@@ -25,9 +25,51 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
       <SubmitButton pendingText="Signing in…" className="w-full">
         Sign in
       </SubmitButton>
-      <Link href="/forgot-password" className="text-center text-sm text-muted-foreground hover:text-foreground">
-        Forgot your password?
-      </Link>
+      <div className="flex justify-between text-sm">
+        <Link href="/forgot-password" className="text-muted-foreground hover:text-foreground">
+          Forgot your password?
+        </Link>
+        <Link href="/signup" className="text-primary hover:underline">
+          Create an account
+        </Link>
+      </div>
+    </form>
+  );
+}
+
+export function SignUpForm() {
+  const [state, action] = useActionState<AuthFormState, FormData>(signUp, null);
+  if (state?.message) {
+    return (
+      <div className="grid gap-4">
+        <Alert variant="success">{state.message}</Alert>
+        <Link href="/login" className="text-center text-sm text-primary hover:underline">
+          Back to sign in
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <form action={action} className="grid gap-4">
+      <FormError message={state?.error} />
+      <Field label="Full name" htmlFor="full_name">
+        <Input name="full_name" autoComplete="name" required maxLength={120} autoFocus />
+      </Field>
+      <Field label="Work email" htmlFor="email">
+        <Input name="email" type="email" autoComplete="email" required />
+      </Field>
+      <Field label="Password" htmlFor="password" hint="At least 8 characters.">
+        <Input name="password" type="password" autoComplete="new-password" minLength={8} required />
+      </Field>
+      <SubmitButton pendingText="Creating account…" className="w-full">
+        Create account
+      </SubmitButton>
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/login" className="text-primary hover:underline">
+          Sign in
+        </Link>
+      </p>
     </form>
   );
 }

@@ -27,6 +27,9 @@ async function Settings() {
         due_reminders_enabled: s.due_reminders_enabled,
         email_notifications_enabled: s.email_notifications_enabled,
         auto_archive_done_after_days: s.auto_archive_done_after_days ?? "",
+        self_signup_enabled: s.self_signup_enabled,
+        signup_allowed_domains: s.signup_allowed_domains.join(", "),
+        signup_requires_approval: s.signup_requires_approval,
       }}
     />
   );

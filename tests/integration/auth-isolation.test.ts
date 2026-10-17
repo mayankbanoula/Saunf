@@ -19,14 +19,6 @@ describe("authentication", () => {
     expect(bad.error).not.toBeNull();
   });
 
-  it("does not allow public sign-up into the private workspace", async () => {
-    const { error } = await anonClient().auth.signUp({
-      email: `stranger-${Date.now()}@example.com`,
-      password: PASSWORD,
-    });
-    expect(error).not.toBeNull();
-  });
-
   it("signs out (the old session can no longer refresh)", async () => {
     const c = anonClient();
     await c.auth.signInWithPassword({ email: w.emp2.email, password: PASSWORD });

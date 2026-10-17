@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
       <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">{children}</div>
       <p className="mt-6 text-center text-xs text-muted-foreground">
-        Saunf is a private workspace. Accounts are created by your administrator.
+        Saunf is your company&apos;s private workspace. Use your work email.
       </p>
     </main>
   );

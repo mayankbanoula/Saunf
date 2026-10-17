@@ -15,7 +15,7 @@ async function Members() {
     supabase
       .from("workspace_members")
       .select(
-        "user_id, role, department_id, is_active, joined_at, profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
+        "user_id, role, department_id, is_active, joined_at, deactivated_at, profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
       )
       .eq("workspace_id", viewer.workspaceId)
       .order("joined_at"),
@@ -34,19 +34,25 @@ async function Members() {
     is_active: m.is_active,
     joined_at: m.joined_at,
     pending_invite: pendingIds.has(m.user_id),
+    // Never activated (self sign-up with approval required), as opposed to deactivated later.
+    awaiting_approval: !m.is_active && m.deactivated_at === null,
   }));
   rows.sort(
     (a, b) =>
-      Number(b.is_active) - Number(a.is_active) || (a.full_name || a.email).localeCompare(b.full_name || b.email),
+      Number(b.awaiting_approval) - Number(a.awaiting_approval) ||
+      Number(b.is_active) - Number(a.is_active) ||
+      (a.full_name || a.email).localeCompare(b.full_name || b.email),
   );
   const active = rows.filter((r) => r.is_active).length;
+  const awaiting = rows.filter((r) => r.awaiting_approval).length;
 
   return (
     <>
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          {active} active · {rows.length - active} deactivated. Deactivated members lose all access immediately and
-          can&apos;t sign in.
+          {active} active · {awaiting ? `${awaiting} awaiting approval · ` : ""}
+          {rows.length - active - awaiting} deactivated. Deactivated members lose all access immediately and can&apos;t
+          sign in.
         </p>
         <InviteButton departments={departments ?? []} />
       </div>

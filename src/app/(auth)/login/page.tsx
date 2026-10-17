@@ -8,7 +8,7 @@ import { LoginForm } from "../auth-forms";
 export const metadata: Metadata = { title: "Sign in" };
 
 const NOTICES: Record<string, string> = {
-  link: "That link is invalid or has expired. Request a new one.",
+  link: "That link is invalid or has expired. If you just confirmed your email, sign in below; otherwise request a new link.",
   inactive: "Your account has been deactivated. Contact your administrator.",
 };
 
@@ -23,7 +23,7 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <>
       <h1 className="mb-1 text-lg font-semibold">Sign in to Saunf</h1>
-      <p className="mb-5 text-sm text-muted-foreground">Use the email your administrator invited.</p>
+      <p className="mb-5 text-sm text-muted-foreground">Use your work email and password.</p>
       <Suspense fallback={<Skeleton className="h-56" />}>
         <LoginContent searchParams={searchParams} />
       </Suspense>

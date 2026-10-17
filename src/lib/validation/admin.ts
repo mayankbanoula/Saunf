@@ -37,6 +37,17 @@ export const departmentSchema = z.object({
 });
 export type DepartmentInput = z.input<typeof departmentSchema>;
 
+const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/;
+
+/** "Acme.com, @acme.in" → ["acme.com", "acme.in"] */
+export const domainListSchema = z
+  .string()
+  .max(2000)
+  .transform((v) =>
+    [...new Set(v.split(/[\s,;]+/).map((d) => d.trim().toLowerCase().replace(/^@/, "")))].filter(Boolean),
+  )
+  .pipe(z.array(z.string().regex(DOMAIN_RE, "Enter domains like acme.com, separated by commas")).max(50));
+
 export const settingsSchema = z.object({
   workspace_name: z.string().trim().min(1, "Name is required").max(100),
   employees_can_create_tasks: z.boolean(),
@@ -48,6 +59,9 @@ export const settingsSchema = z.object({
   due_soon_hours: z.coerce.number().int().min(1, "At least 1 hour").max(168, "At most 168 hours"),
   due_reminders_enabled: z.boolean(),
   email_notifications_enabled: z.boolean(),
+  self_signup_enabled: z.boolean(),
+  signup_allowed_domains: domainListSchema,
+  signup_requires_approval: z.boolean(),
   auto_archive_done_after_days: z.union([
     z.coerce.number().int().min(1).max(3650),
     z.literal("").transform(() => null),

@@ -132,8 +132,17 @@ Notes:
 
 ## 7. Authentication
 
-- Public sign-up is disabled (`auth.enable_signup = false`). Accounts are created
-  only by an admin invitation or admin-created account.
+- Accounts come from (a) an admin invitation, (b) an admin-created account, or
+  (c) self sign-up at `/signup`. Self sign-up is **off by default**. An admin turns it
+  on per workspace and can restrict it to email domains (`signup_allowed_domains`)
+  and require approval (`signup_requires_approval`).
+- The `on_auth_user_created` trigger decides membership. A pending invitation wins and
+  keeps its role and department. Otherwise the user joins the oldest workspace open to
+  their email domain, always as **employee** (sign-up metadata can't set a role). If
+  approval is required they start inactive and get no data until an admin approves
+  them. If no workspace is open to them, the trigger rejects the account.
+- With Supabase "Confirm email" off, a domain restriction doesn't prove someone owns
+  the address. Use email confirmation (needs SMTP) or admin approval.
 - Session cookies are managed by `@supabase/ssr`; `proxy.ts` refreshes them and
   redirects anonymous users from app routes to `/login`. Server code re-validates
   with `supabase.auth.getClaims()` (verifies the JWT) in the data-access layer —

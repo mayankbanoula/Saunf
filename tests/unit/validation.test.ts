@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { safeNextPath } from "@/lib/actions";
 import { escapeLike, initials, pgrstQuote } from "@/lib/utils";
-import { inviteSchema, settingsSchema } from "@/lib/validation/admin";
+import { domainListSchema, inviteSchema, settingsSchema } from "@/lib/validation/admin";
 import { projectSchema } from "@/lib/validation/project";
 import { bulkUpdateSchema, commentSchema, createTaskSchema, updateTaskSchema } from "@/lib/validation/task";
 
@@ -74,9 +74,19 @@ describe("admin and project validation", () => {
       due_reminders_enabled: true,
       email_notifications_enabled: false,
       auto_archive_done_after_days: "",
+      self_signup_enabled: true,
+      signup_allowed_domains: "",
+      signup_requires_approval: false,
     };
     expect(settingsSchema.safeParse({ ...s, default_status: "done" }).success).toBe(false);
     expect(settingsSchema.safeParse({ ...s, default_status: "todo" }).success).toBe(true);
+  });
+
+  it("parses the sign-up domain list", () => {
+    expect(domainListSchema.parse(" Acme.com, @acme.in;acme.com ")).toEqual(["acme.com", "acme.in"]);
+    expect(domainListSchema.parse("")).toEqual([]);
+    expect(domainListSchema.safeParse("acme").success).toBe(false);
+    expect(domainListSchema.safeParse("acme.com, not a domain").success).toBe(false);
   });
 
   it("rejects a project target date before its start", () => {

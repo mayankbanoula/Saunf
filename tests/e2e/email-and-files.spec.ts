@@ -134,3 +134,43 @@ test("attachments upload to private storage and download through a signed link",
   const { data } = await service.from("task_attachments").select("id").eq("task_id", t.id);
   expect(data).toEqual([]);
 });
+
+// Supabase's default templates (used on hosted projects until custom SMTP is set up) link to
+// /auth/v1/verify, which redirects back with the session in the URL #fragment.
+test("default-template invite links (session in #fragment) still sign the person in", async ({ page, baseURL }) => {
+  const email = `default-tpl-${Date.now()}@test.saunf.local`;
+  await service.from("invitations").insert({ workspace_id: w.ws, email, role: "employee", full_name: "Dee Fault" });
+  const { data, error } = await service.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { redirectTo: `${baseURL}/auth/confirm?next=/set-password` },
+  });
+  expect(error).toBeNull();
+  await page.goto(data.properties!.action_link);
+  await expect(page).toHaveURL(/\/set-password/);
+  await page.getByLabel("New password").fill("Default-tpl-1");
+  await page.getByLabel("Confirm password").fill("Default-tpl-1");
+  await page.getByRole("button", { name: "Set password and continue" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+  await service.auth.admin.deleteUser(data.user!.id).catch(() => undefined);
+});
+
+test("default-template password reset links work too", async ({ page, baseURL }) => {
+  const { data, error } = await service.auth.admin.generateLink({
+    type: "recovery",
+    email: w.emp1.email,
+    options: { redirectTo: `${baseURL}/auth/confirm?next=/reset-password` },
+  });
+  expect(error).toBeNull();
+  await page.goto(data.properties!.action_link);
+  await expect(page).toHaveURL(/\/reset-password/);
+  await page.getByLabel("New password").fill(PASSWORD + "x");
+  await page.getByLabel("Confirm password").fill(PASSWORD + "x");
+  await page.getByRole("button", { name: "Update password" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+});
+
+test("a fragment link without a session goes back to login", async ({ page }) => {
+  await page.goto("/auth/confirm?next=/set-password#error=access_denied&error_code=otp_expired");
+  await expect(page).toHaveURL(/\/login\?error=link/);
+});

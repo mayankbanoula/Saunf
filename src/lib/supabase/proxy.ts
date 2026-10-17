@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "@/lib/database.types";
 
-const PUBLIC_PATHS = ["/login", "/forgot-password", "/auth"];
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
     return redirect;
   }
 
-  if (signedIn && (pathname === "/login" || pathname === "/forgot-password")) {
+  if (signedIn && (pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password")) {
     const appUrl = request.nextUrl.clone();
     appUrl.pathname = "/dashboard";
     appUrl.search = "";

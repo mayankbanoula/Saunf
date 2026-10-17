@@ -14,7 +14,8 @@ _Last updated: 17 Oct 2026_
 
 - [x] Next.js App Router, strict TypeScript, Tailwind CSS 4 design tokens, shadcn-style Radix components
 - [x] Supabase migrations: schema, RLS on every table, triggers, RPCs, private storage bucket, `pg_cron`
-- [x] Supabase Auth: login, logout, forgot/reset password, session refresh in `proxy.ts`, invite-only (sign-up disabled)
+- [x] Supabase Auth: login, logout, forgot/reset password, session refresh in `proxy.ts`
+- [x] Employee self sign-up (`/signup`), off by default; admins control allowed email domains and optional approval. Invitations and admin-created accounts also supported.
 - [x] Data-access layer (`getClaims` verification, active membership check); inactive users are redirected and lose RLS access
 - [x] App shell: collapsible sidebar, mobile drawer, global search (⌘K), quick create, notifications, user menu
 
@@ -44,7 +45,7 @@ _Last updated: 17 Oct 2026_
 
 **Phase 6 — Hardening**
 
-- [x] 45 unit tests, 53 RLS/workflow integration tests, 15 Playwright end-to-end tests (all passing)
+- [x] 46 unit tests, 58 RLS/workflow integration tests, 20 Playwright end-to-end tests (all passing)
 - [x] Lint (0 problems), typecheck, Prettier, production build
 - [x] Mobile layout verified at 390 px: no horizontal overflow on the main pages (tested)
 - [x] README, deployment, backup and retention guide, CI workflow
@@ -57,10 +58,10 @@ _Last updated: 17 Oct 2026_
 | `npm run lint`                                               | ✅ 0 problems                             |
 | `npm run typecheck`                                          | ✅                                        |
 | `npm run format:check`                                       | ✅                                        |
-| `npm run test:unit`                                          | ✅ 45 passed                              |
-| `npm run test:integration`                                   | ✅ 53 passed (local Supabase in Docker)   |
+| `npm run test:unit`                                          | ✅ 46 passed                              |
+| `npm run test:integration`                                   | ✅ 58 passed (local Supabase in Docker)   |
 | `npm run build`                                              | ✅                                        |
-| `npm run test:e2e`                                           | ✅ 15 passed (production build, Chromium) |
+| `npm run test:e2e`                                           | ✅ 20 passed (production build, Chromium) |
 | `npm run db:reset`, `npm run bootstrap`, `npm run seed:demo` | ✅                                        |
 | `npm audit --omit=dev`                                       | ✅ 0 vulnerabilities                      |
 
@@ -70,7 +71,7 @@ The CI workflow (`.github/workflows/ci.yml`) mirrors these commands but has not 
 
 - **Hosted deployment.** The app hasn't been deployed to Vercel or a hosted Supabase project from here, because no credentials were available. Follow `docs/DEPLOYMENT.md`.
 - **Notification email delivery.** The `/api/cron/email-notifications` endpoint is implemented. Its auth, eligibility query, retry-on-failure and the "not configured" path are tested, but real delivery through Resend was not tested because there was no API key or outbound access to the provider.
-- **Auth emails on a hosted project.** Invite and password-reset emails were verified end to end against the local stack (Mailpit). On a hosted project they depend on your SMTP settings and the templates in `supabase/templates/` being pasted into the dashboard.
+- **Auth emails on a hosted project.** Invite, password-reset and sign-up flows were verified end to end against the local stack (Mailpit), with both custom (token_hash) and Supabase-default (#fragment) link formats. On a hosted project, delivery depends on your SMTP settings and the templates in `supabase/templates/` being pasted into the dashboard.
 
 ## Known limitations and product decisions
 
