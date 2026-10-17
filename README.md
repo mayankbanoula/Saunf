@@ -11,6 +11,16 @@ Saunf is a private task-management workspace for teams inside one organisation. 
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design, [`docs/SECURITY.md`](docs/SECURITY.md) for the permission matrix, [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for production setup and backups, and [`CHECKLIST.md`](CHECKLIST.md) for status and known limitations.
 
+## Screenshots
+
+| Dashboard | Board |
+| --- | --- |
+| ![Dashboard](docs/screenshots/02-dashboard.png) | ![Kanban board](docs/screenshots/04-board.png) |
+| **Task detail** | **Reports** |
+| ![Task detail](docs/screenshots/05-task-detail.png) | ![Reports](docs/screenshots/08-reports.png) |
+
+More in [`docs/screenshots/`](docs/screenshots/) (captured with the local demo seed).
+
 ## Stack
 
 Next.js 16.4 (App Router, Cache Components, `proxy.ts`) · React 19.3 · TypeScript (strict) · Tailwind CSS 4 · shadcn/ui-style components on Radix · Lucide · Supabase (Postgres 17, Auth, Storage, `pg_cron`) via `@supabase/ssr` · Zod 4 · React Hook Form · date-fns 4 · dnd-kit · Recharts 3 · Vitest · Playwright.
