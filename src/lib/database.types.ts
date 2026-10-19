@@ -559,14 +559,14 @@ isOneToOne: false
                   ]
                 },"workspace_members": {
                   Row: {
-                    "deactivated_at": string | null,"deactivated_by": string | null,"department_id": string | null,"is_active": boolean,"joined_at": string,"role": Database["public"]['Enums']["workspace_role"],"user_id": string,"workspace_id": string
+                    "deactivated_at": string | null,"deactivated_by": string | null,"department_id": string | null,"is_active": boolean,"joined_at": string,"reports_to": string | null,"role": Database["public"]['Enums']["workspace_role"],"user_id": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "deactivated_at"?: string | null,"deactivated_by"?: string | null,"department_id"?: string | null,"is_active"?: boolean,"joined_at"?: string,"role"?: Database["public"]['Enums']["workspace_role"],"user_id": string,"workspace_id": string
+                    "deactivated_at"?: string | null,"deactivated_by"?: string | null,"department_id"?: string | null,"is_active"?: boolean,"joined_at"?: string,"reports_to"?: string | null,"role"?: Database["public"]['Enums']["workspace_role"],"user_id": string,"workspace_id": string
                   }
                   Update: {
-                    "deactivated_at"?: string | null,"deactivated_by"?: string | null,"department_id"?: string | null,"is_active"?: boolean,"joined_at"?: string,"role"?: Database["public"]['Enums']["workspace_role"],"user_id"?: string,"workspace_id"?: string
+                    "deactivated_at"?: string | null,"deactivated_by"?: string | null,"department_id"?: string | null,"is_active"?: boolean,"joined_at"?: string,"reports_to"?: string | null,"role"?: Database["public"]['Enums']["workspace_role"],"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -575,6 +575,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "workspace_members_reports_to_fkey"
+      columns: ["workspace_id","reports_to"]
+isOneToOne: false
+      referencedRelation: "workspace_members"
+      referencedColumns: ["workspace_id","user_id"]
     },{
       foreignKeyName: "workspace_members_user_id_fkey"
       columns: ["user_id"]
@@ -647,15 +653,20 @@ isOneToOne: true
             }[]
                            },
 "dashboard_summary":
-{ Args: { "p_from"?: string,"p_to"?: string }; Returns: Json
+{ Args: { "p_from"?: string,"p_member"?: string,"p_to"?: string }; Returns: Json
+                           },
+"people_in_scope":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "email": string,"full_name": string,"reports_to": string,"user_id": string
+            }[]
                            },
 "project_progress":
-{ Args: Record<PropertyKey, never>; Returns: {
+{ Args: { "p_member"?: string }; Returns: {
               "done": number,"is_private": boolean,"name": string,"overdue": number,"project_id": string,"status": Database["public"]['Enums']["project_status"],"target_date": string,"total": number
             }[]
                            },
 "task_throughput":
-{ Args: { "p_from": string,"p_to": string }; Returns: {
+{ Args: { "p_from": string,"p_member"?: string,"p_to": string }; Returns: {
               "completed": number,"created": number,"day": string
             }[]
                            },
@@ -663,7 +674,7 @@ isOneToOne: true
 { Args: { "p_collaborator_ids"?: (string)[],"p_label_ids"?: (string)[],"p_note"?: string,"p_patch"?: Json,"p_task_id": string }; Returns: undefined
                            },
 "workload_by_member":
-{ Args: { "p_from"?: string,"p_to"?: string }; Returns: {
+{ Args: { "p_from"?: string,"p_member"?: string,"p_to"?: string }; Returns: {
               "completed_count": number,"department_id": string,"email": string,"full_name": string,"in_progress_count": number,"in_review_count": number,"open_count": number,"overdue_count": number,"urgent_count": number,"user_id": string
             }[]
                            },

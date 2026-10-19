@@ -16,10 +16,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { PersonPicker } from "@/components/person-picker";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/primitives";
 import { requireViewer } from "@/lib/auth/session";
 import { dueTone } from "@/lib/dates";
+import { assigneeParam, resolvePeopleView } from "@/lib/people";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_DOT } from "@/lib/tasks/constants";
 import { queryContext } from "@/lib/tasks/queries";
@@ -45,7 +47,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
   const sp = await searchParams;
   const ctx = queryContext(viewer);
   const mode = one(sp.view) === "week" ? "week" : "month";
-  const mine = one(sp.mine) === "1";
+  const view = await resolvePeopleView(viewer, sp.person);
   const rawDate = one(sp.date);
   const anchor = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? parseISO(rawDate) : parseISO(ctx.today);
 
@@ -67,7 +69,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
     .lte("due_date", format(rangeEnd, "yyyy-MM-dd"))
     .order("due_time", { nullsFirst: true })
     .limit(MAX_TASKS);
-  if (mine) query = query.eq("assignee_id", viewer.id);
+  if (view.ids) query = query.in("assignee_id", view.ids);
   const { data: tasks, error } = await query;
   if (error) throw new Error(`Could not load calendar: ${error.message}`);
 
@@ -81,7 +83,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
   const href = (date: Date, overrides: Record<string, string | null> = {}) => {
     const p = new URLSearchParams();
     if (mode === "week") p.set("view", "week");
-    if (mine) p.set("mine", "1");
+    if (view.current !== view.options[0]?.value && view.options.length) p.set("person", view.current);
     p.set("date", format(date, "yyyy-MM-dd"));
     for (const [k, v] of Object.entries(overrides)) {
       if (v === null) p.delete(k);
@@ -116,14 +118,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
         </div>
         <h2 className="text-base font-semibold">{title}</h2>
         <div className="ml-auto flex items-center gap-2">
-          <div className="flex rounded-md border bg-card p-0.5" role="group" aria-label="Tasks shown">
-            <Button asChild size="xs" variant={!mine ? "secondary" : "ghost"}>
-              <Link href={href(anchor, { mine: null })}>Everyone</Link>
-            </Button>
-            <Button asChild size="xs" variant={mine ? "secondary" : "ghost"}>
-              <Link href={href(anchor, { mine: "1" })}>Mine</Link>
-            </Button>
-          </div>
+          <PersonPicker current={view.current} options={view.options} />
           <div className="flex rounded-md border bg-card p-0.5" role="group" aria-label="Calendar view">
             <Button asChild size="xs" variant={mode === "month" ? "secondary" : "ghost"}>
               <Link href={href(anchor, { view: null })}>Month</Link>
@@ -195,7 +190,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
                   {list.length > limit ? (
                     <li>
                       <Link
-                        href={`/tasks?due_from=${iso}&due_to=${iso}${mine ? "&assignee=me" : ""}`}
+                        href={`/tasks?due_from=${iso}&due_to=${iso}${assigneeParam(view, viewer)}`}
                         className="px-1 text-[11px] text-primary hover:underline"
                       >
                         +{list.length - limit} more

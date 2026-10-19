@@ -15,7 +15,7 @@ async function Members() {
     supabase
       .from("workspace_members")
       .select(
-        "user_id, role, department_id, is_active, joined_at, deactivated_at, profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
+        "user_id, role, department_id, reports_to, is_active, joined_at, deactivated_at, profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
       )
       .eq("workspace_id", viewer.workspaceId)
       .order("joined_at"),
@@ -31,6 +31,7 @@ async function Members() {
     job_title: m.profiles?.job_title ?? null,
     role: m.role,
     department_id: m.department_id,
+    reports_to: m.reports_to,
     is_active: m.is_active,
     joined_at: m.joined_at,
     pending_invite: pendingIds.has(m.user_id),
@@ -52,7 +53,8 @@ async function Members() {
         <p className="text-sm text-muted-foreground">
           {active} active · {awaiting ? `${awaiting} awaiting approval · ` : ""}
           {rows.length - active - awaiting} deactivated. Deactivated members lose all access immediately and can&apos;t
-          sign in.
+          sign in. Use <strong>Reports to</strong> to choose each person&apos;s manager: managers see the tasks and
+          activity of the people who report to them; everyone else sees only their own.
         </p>
         <InviteButton departments={departments ?? []} />
       </div>

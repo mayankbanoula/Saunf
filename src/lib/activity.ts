@@ -145,6 +145,10 @@ export function describeActivity(e: ActivityEvent, subject = "this task"): strin
       return `changed ${str(m.name) ?? "a member"}'s role from ${ROLE_LABEL[o.role as WorkspaceRole] ?? o.role} to ${ROLE_LABEL[n.role as WorkspaceRole] ?? n.role}`;
     case "member_department_changed":
       return `moved ${str(m.name) ?? "a member"} ${str(n.department) ? `to ${str(n.department)}` : "out of their department"}`;
+    case "member_manager_changed":
+      return str(n.manager)
+        ? `set ${str(m.name) ?? "a member"} to report to ${str(n.manager)}`
+        : `removed ${str(m.name) ?? "a member"}'s manager`;
     case "member_deactivated":
       return `deactivated ${str(m.name) ?? "a member"}`;
     case "member_reactivated":

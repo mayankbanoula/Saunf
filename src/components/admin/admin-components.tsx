@@ -116,6 +116,7 @@ export type MemberRow = {
   job_title: string | null;
   role: WorkspaceRole;
   department_id: string | null;
+  reports_to: string | null;
   is_active: boolean;
   joined_at: string;
   pending_invite: boolean;
@@ -139,6 +140,8 @@ export function MembersTable({
     if (res.ok) toast.success(success);
     else toast.error(res.error);
   };
+  // Only active managers and admins can have reportees.
+  const managers = members.filter((m) => m.is_active && m.role !== "employee");
 
   return (
     <Card>
@@ -148,6 +151,7 @@ export function MembersTable({
             <TableHead>Member</TableHead>
             <TableHead>Role</TableHead>
             <TableHead className="hidden md:table-cell">Department</TableHead>
+            <TableHead className="hidden md:table-cell">Reports to</TableHead>
             <TableHead className="hidden lg:table-cell">Joined</TableHead>
             <TableHead>Active</TableHead>
           </TableRow>
@@ -212,6 +216,30 @@ export function MembersTable({
                         {d.name}
                       </option>
                     ))}
+                  </NativeSelect>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  <NativeSelect
+                    aria-label={`Manager of ${m.full_name}`}
+                    className="h-8 w-40 text-sm"
+                    value={m.reports_to ?? ""}
+                    disabled={busy === m.user_id}
+                    onChange={(e) =>
+                      run(
+                        m.user_id,
+                        () => updateMember({ user_id: m.user_id, reports_to: e.target.value }),
+                        "Manager updated",
+                      )
+                    }
+                  >
+                    <option value="">No manager</option>
+                    {managers
+                      .filter((x) => x.user_id !== m.user_id)
+                      .map((x) => (
+                        <option key={x.user_id} value={x.user_id}>
+                          {x.full_name || x.email}
+                        </option>
+                      ))}
                   </NativeSelect>
                 </TableCell>
                 <TableCell className="hidden text-xs text-muted-foreground lg:table-cell">

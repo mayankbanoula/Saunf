@@ -41,9 +41,17 @@ implement. If code and this document disagree, that is a bug.
 
 - **Member**: a user with an _active_ `workspace_members` row.
 - **Participant** of a task: its creator, current assignee, or a collaborator.
+- **Reportees** of _M_: members whose `workspace_members.reports_to` is _M_, and
+  their reportees, at any depth. Only admins set `reports_to`, and only to an
+  active manager or admin. Self-reporting and loops are rejected; when someone
+  stops being a manager or admin (or is deactivated), their direct reportees are
+  left without a manager.
+- **People scope** of a user: admins, everyone; managers, themselves plus their
+  reportees; employees, only themselves.
 - **Manager scope** of manager _M_: departments where `departments.manager_id = M`,
   plus _M_'s own department. A task is in scope if its `department_id`, its
-  assignee's department or its creator's department is in that set.
+  assignee's department or its creator's department is in that set, or if its
+  assignee or creator is one of _M_'s reportees.
 - **Project manager** of a project: its owner or a project member with role `lead`.
 - **Task editor**: admin; the task's creator; a manager whose scope contains the
   task; a project manager of the task's project.
@@ -63,42 +71,53 @@ project members/owner.
 
 ## 4. Permission matrix
 
-| Capability                                                                                                                     |                Admin                |              Manager               |              Employee              |
-| ------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------: | :--------------------------------: | :--------------------------------: |
-| Sign in, view own profile, edit own name/title/prefs                                                                           |                 ✅                  |                 ✅                 |                 ✅                 |
-| View employee directory (name, email, title, role, department)                                                                 |                 ✅                  |                 ✅                 |                 ✅                 |
-| Invite / create employees                                                                                                      |                 ✅                  |                 ❌                 |                 ❌                 |
-| Change roles, departments; activate / deactivate                                                                               | ✅ (not self; never the last admin) |                 ❌                 |                 ❌                 |
-| Manage departments                                                                                                             |                 ✅                  |                 ❌                 |                 ❌                 |
-| Edit workspace settings                                                                                                        |                 ✅                  |                 ❌                 |                 ❌                 |
-| View workspace-level audit log (members, settings)                                                                             |                 ✅                  |                 ❌                 |                 ❌                 |
-| Create project                                                                                                                 |                 ✅                  |                 ✅                 |                 ❌                 |
-| Edit project / manage its members                                                                                              |                 ✅                  |          project manager           |          project manager           |
-| View project                                                                                                                   |                 ✅                  | public projects; private if member | public projects; private if member |
-| View task                                                                                                                      |                 all                 |       §3 visibility + scope        |           §3 visibility            |
-| Create task                                                                                                                    |                 ✅                  |                 ✅                 |  if `employees_can_create_tasks`   |
-| Assign on create / reassign to member X                                                                                        |             any member              |             any member             |      per `assignment_policy`       |
-| Reassign an existing task                                                                                                      |                 ✅                  |  task editor or current assignee   |  task editor or current assignee   |
-| Edit details (title, description, priority, dates, project, department, parent, estimate, labels, collaborators, dependencies) |                 ✅                  |            task editor             |  task editor (usually: own tasks)  |
-| Change status, progress, blocked flag; complete / reopen                                                                       |                 ✅                  |            task worker             |            task worker             |
-| Archive / restore task                                                                                                         |                 ✅                  |            task editor             |            task editor             |
-| Edit an archived task (other than restore)                                                                                     |                 ❌                  |                 ❌                 |                 ❌                 |
-| Delete a task permanently                                                                                                      |  ❌ (not exposed; archive instead)  |                 ❌                 |                 ❌                 |
-| Comment on a task                                                                                                              |       can view & not archived       |                same                |                same                |
-| Edit a comment                                                                                                                 |                 own                 |                own                 |                own                 |
-| Delete (soft) a comment                                                                                                        |                 any                 |                own                 |                own                 |
-| Upload attachment                                                                                                              |       can view & not archived       |                same                |                same                |
-| Download attachment                                                                                                            |            can view task            |                same                |                same                |
-| Delete attachment                                                                                                              |                 ✅                  |      uploader or task editor       |      uploader or task editor       |
-| Create labels                                                                                                                  |                 ✅                  |                 ✅                 |                 ✅                 |
-| Rename / delete labels                                                                                                         |                 ✅                  |                 ✅                 |                 ❌                 |
-| View task activity / assignment history                                                                                        |          if can view task           |                same                |                same                |
-| Read notifications                                                                                                             |              own only               |              own only              |              own only              |
-| Mark notification read                                                                                                         |  own only (`read_at` column only)   |                same                |                same                |
-| Edit / delete activity history                                                                                                 |                 ❌                  |                 ❌                 |                 ❌                 |
+| Capability                                                                                                                     |                Admin                |                   Manager                   |              Employee              |
+| ------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------: | :-----------------------------------------: | :--------------------------------: |
+| Sign in, view own profile, edit own name/title/prefs                                                                           |                 ✅                  |                     ✅                      |                 ✅                 |
+| View employee directory (name, email, title, role, department)                                                                 |                 ✅                  |                     ✅                      |                 ✅                 |
+| Invite / create employees                                                                                                      |                 ✅                  |                     ❌                      |                 ❌                 |
+| Change roles, departments; activate / deactivate                                                                               | ✅ (not self; never the last admin) |                     ❌                      |                 ❌                 |
+| Manage departments                                                                                                             |                 ✅                  |                     ❌                      |                 ❌                 |
+| Edit workspace settings                                                                                                        |                 ✅                  |                     ❌                      |                 ❌                 |
+| View workspace-level audit log (members, settings)                                                                             |                 ✅                  |                     ❌                      |                 ❌                 |
+| Create project                                                                                                                 |                 ✅                  |                     ✅                      |                 ❌                 |
+| Edit project / manage its members                                                                                              |                 ✅                  |               project manager               |          project manager           |
+| View project                                                                                                                   |                 ✅                  |     public projects; private if member      | public projects; private if member |
+| View task                                                                                                                      |                 all                 |            §3 visibility + scope            |           §3 visibility            |
+| Create task                                                                                                                    |                 ✅                  |                     ✅                      |  if `employees_can_create_tasks`   |
+| Assign on create / reassign to member X                                                                                        |             any member              |                 any member                  |      per `assignment_policy`       |
+| Reassign an existing task                                                                                                      |                 ✅                  |       task editor or current assignee       |  task editor or current assignee   |
+| Edit details (title, description, priority, dates, project, department, parent, estimate, labels, collaborators, dependencies) |                 ✅                  |                 task editor                 |  task editor (usually: own tasks)  |
+| Change status, progress, blocked flag; complete / reopen                                                                       |                 ✅                  |                 task worker                 |            task worker             |
+| Archive / restore task                                                                                                         |                 ✅                  |                 task editor                 |            task editor             |
+| Edit an archived task (other than restore)                                                                                     |                 ❌                  |                     ❌                      |                 ❌                 |
+| Delete a task permanently                                                                                                      |  ❌ (not exposed; archive instead)  |                     ❌                      |                 ❌                 |
+| Comment on a task                                                                                                              |       can view & not archived       |                    same                     |                same                |
+| Edit a comment                                                                                                                 |                 own                 |                     own                     |                own                 |
+| Delete (soft) a comment                                                                                                        |                 any                 |                     own                     |                own                 |
+| Upload attachment                                                                                                              |       can view & not archived       |                    same                     |                same                |
+| Download attachment                                                                                                            |            can view task            |                    same                     |                same                |
+| Delete attachment                                                                                                              |                 ✅                  |           uploader or task editor           |      uploader or task editor       |
+| Create labels                                                                                                                  |                 ✅                  |                     ✅                      |                 ✅                 |
+| Rename / delete labels                                                                                                         |                 ✅                  |                     ✅                      |                 ❌                 |
+| View activity events on a task / project                                                                                       |                 all                 | own + reportees'; all on tasks they work on |   own; all on tasks they work on   |
+| Dashboard, reports, calendar and team workload numbers                                                                         |              everyone               |              own + reportees'               |                own                 |
+| Set who a member reports to                                                                                                    |                 ✅                  |                     ❌                      |                 ❌                 |
+| View assignment history                                                                                                        |          if can view task           |                    same                     |                same                |
+| Read notifications                                                                                                             |              own only               |                  own only                   |              own only              |
+| Mark notification read                                                                                                         |  own only (`read_at` column only)   |                    same                     |                same                |
+| Edit / delete activity history                                                                                                 |                 ❌                  |                     ❌                      |                 ❌                 |
 
 Notes:
 
+- "Tasks they work on" means _task worker_ (§2). Activity on a task is visible
+  only if the task itself is visible. Opening a task you can see but don't work
+  on shows only your own and your reportees' actions on it.
+- Reporting numbers (`dashboard_summary`, `task_throughput`, `project_progress`,
+  `workload_by_member`) count tasks by assignee within the caller's people scope.
+  Their optional `p_member` argument narrows to one person and never widens the
+  scope. The task list and board still follow §3 task visibility; set
+  `task_visibility = participants` to hide other people's tasks there too.
 - Admins cannot read other users' notifications. Notifications are personal; the
   audit log already gives admins the information.
 - Comment and attachment rights inherit task visibility.

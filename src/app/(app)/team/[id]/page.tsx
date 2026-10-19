@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
@@ -35,7 +36,7 @@ async function PersonContent({ params, searchParams }: PageProps<"/team/[id]">) 
     supabase
       .from("workspace_members")
       .select(
-        "user_id, role, is_active, joined_at, department:departments!workspace_members_workspace_id_department_id_fkey(id, name), profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
+        "user_id, role, is_active, joined_at, reports_to, department:departments!workspace_members_workspace_id_department_id_fkey(id, name), profiles!workspace_members_user_id_fkey(full_name, email, job_title)",
       )
       .eq("workspace_id", viewer.workspaceId)
       .eq("user_id", id)
@@ -44,6 +45,9 @@ async function PersonContent({ params, searchParams }: PageProps<"/team/[id]">) 
   ]);
   if (!member?.profiles) notFound();
   const w = workload?.find((x) => x.user_id === id);
+  const { data: manager } = member.reports_to
+    ? await supabase.from("profiles").select("full_name, email").eq("id", member.reports_to).maybeSingle()
+    : { data: null };
   const name = displayName(member.profiles);
 
   return (
@@ -69,12 +73,23 @@ async function PersonContent({ params, searchParams }: PageProps<"/team/[id]">) 
           </>
         }
       />
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Open tasks" value={Number(w?.open_count ?? 0)} />
-        <Stat label="In progress" value={Number(w?.in_progress_count ?? 0)} />
-        <Stat label="In review" value={Number(w?.in_review_count ?? 0)} />
-        <Stat label="Overdue" value={Number(w?.overdue_count ?? 0)} tone="danger" />
-      </div>
+      {manager ? (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Reports to{" "}
+          <Link href={`/team/${member.reports_to}`} className="text-foreground hover:underline">
+            {displayName(manager)}
+          </Link>
+        </p>
+      ) : null}
+      {/* Numbers only for yourself and people who report to you (admins: everyone). */}
+      {w ? (
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Open tasks" value={Number(w.open_count)} />
+          <Stat label="In progress" value={Number(w.in_progress_count)} />
+          <Stat label="In review" value={Number(w.in_review_count)} />
+          <Stat label="Overdue" value={Number(w.overdue_count)} tone="danger" />
+        </div>
+      ) : null}
       <h2 className="mb-3 text-sm font-semibold">Assigned tasks you can see</h2>
       <Suspense fallback={<TaskListSkeleton />}>
         <TaskListView

@@ -28,6 +28,7 @@ export const memberUpdateSchema = z.object({
   user_id: z.uuid(),
   role: z.enum(WORKSPACE_ROLES).optional(),
   department_id: optionalUuid,
+  reports_to: optionalUuid,
 });
 
 export const departmentSchema = z.object({
