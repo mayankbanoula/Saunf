@@ -213,7 +213,7 @@ export async function bulkUpdateTasks(input: z.input<typeof bulkUpdateSchema>): 
 // ---------------------------------------------------------------------------
 // Labels
 // ---------------------------------------------------------------------------
-const LABEL_COLORS = ["#4d7c5a", "#2f6f9f", "#b7791f", "#9b4d96", "#c2410c", "#0f766e", "#64748b"];
+const LABEL_COLORS = ["#262f82", "#2f6f9f", "#b7791f", "#9966ff", "#c2410c", "#cc66ff", "#64748b"];
 
 export async function createLabel(name: string): Promise<ActionResult<{ id: string; name: string; color: string }>> {
   return runAction(async () => {

@@ -114,12 +114,12 @@ export function Progress({ className, value, ...props }: React.ComponentProps<ty
 }
 
 const AVATAR_TONES = [
-  "bg-[oklch(0.92_0.05_150)] text-[oklch(0.35_0.07_155)]",
+  "bg-[oklch(0.93_0.04_285)] text-[oklch(0.4_0.12_285)]",
   "bg-[oklch(0.92_0.04_245)] text-[oklch(0.38_0.09_250)]",
   "bg-[oklch(0.93_0.05_70)] text-[oklch(0.42_0.09_60)]",
   "bg-[oklch(0.92_0.04_300)] text-[oklch(0.4_0.1_300)]",
   "bg-[oklch(0.93_0.04_20)] text-[oklch(0.42_0.1_25)]",
-  "bg-[oklch(0.92_0.03_190)] text-[oklch(0.38_0.07_200)]",
+  "bg-[oklch(0.93_0.03_230)] text-[oklch(0.35_0.1_255)]",
 ];
 
 function toneFor(seed: string) {

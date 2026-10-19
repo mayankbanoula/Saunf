@@ -220,9 +220,9 @@ async function main() {
   const labelIds: Record<string, string> = {};
   for (const [name, color] of [
     ["frontend", "#2f6f9f"],
-    ["backend", "#4d7c5a"],
+    ["backend", "#262f82"],
     ["bug", "#c2410c"],
-    ["design", "#9b4d96"],
+    ["design", "#9966ff"],
     ["finance", "#b7791f"],
   ] as const) {
     labelIds[name] = (
