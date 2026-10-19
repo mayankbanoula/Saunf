@@ -61,15 +61,15 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
   for (let d = rangeStart; d <= rangeEnd; d = addDays(d, 1)) days.push(d);
 
   const supabase = await createClient();
-  let query = supabase
-    .from("tasks")
+  // Tasks you're involved in (plus your reportees'; admins: all), narrowed by the person picker.
+  const query = supabase
+    .rpc("tasks_in_view", { p_member: view.member ?? undefined })
     .select("id, key, title, status, priority, due_date, due_time")
     .is("archived_at", null)
     .gte("due_date", format(rangeStart, "yyyy-MM-dd"))
     .lte("due_date", format(rangeEnd, "yyyy-MM-dd"))
     .order("due_time", { nullsFirst: true })
     .limit(MAX_TASKS);
-  if (view.ids) query = query.in("assignee_id", view.ids);
   const { data: tasks, error } = await query;
   if (error) throw new Error(`Could not load calendar: ${error.message}`);
 

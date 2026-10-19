@@ -61,6 +61,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"chat_group_members": {
+                  Row: {
+                    "group_id": string,"joined_at": string,"last_read_at": string | null,"user_id": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "group_id": string,"joined_at"?: string,"last_read_at"?: string | null,"user_id": string,"workspace_id": string
+                  }
+                  Update: {
+                    "group_id"?: string,"joined_at"?: string,"last_read_at"?: string | null,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "chat_group_members_group_id_fkey"
+      columns: ["group_id"]
+isOneToOne: false
+      referencedRelation: "chat_groups"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "chat_group_members_workspace_id_user_id_fkey"
+      columns: ["workspace_id","user_id"]
+isOneToOne: false
+      referencedRelation: "workspace_members"
+      referencedColumns: ["workspace_id","user_id"]
+    }
+                  ]
+                },"chat_groups": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"last_message_at": string | null,"name": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"last_message_at"?: string | null,"name": string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"last_message_at"?: string | null,"name"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "chat_groups_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "chat_groups_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"conversations": {
                   Row: {
                     "created_at": string,"id": string,"last_message_at": string | null,"last_read_a": string | null,"last_read_b": string | null,"user_a": string,"user_b": string,"workspace_id": string
@@ -116,6 +168,32 @@ isOneToOne: false
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"group_messages": {
+                  Row: {
+                    "body": string,"created_at": string,"group_id": string,"id": string,"sender_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"created_at"?: string,"group_id": string,"id"?: string,"sender_id": string
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"group_id"?: string,"id"?: string,"sender_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "group_messages_group_id_fkey"
+      columns: ["group_id"]
+isOneToOne: false
+      referencedRelation: "chat_groups"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "group_messages_sender_id_fkey"
+      columns: ["sender_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -748,8 +826,33 @@ isOneToOne: true
             "accept_invitation":
 { Args: Record<PropertyKey, never>; Returns: undefined
                            },
+"activity_in_view":
+{ Args: { "p_member"?: string }; Returns: {
+              "actor_id": string | null,
+"created_at": string,
+"event_type": string,
+"id": string,
+"metadata": NonNullable<Json>,
+"new_value": Json | null,
+"old_value": Json | null,
+"project_id": string | null,
+"task_id": string | null,
+"workspace_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "activity_events"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"add_chat_group_members":
+{ Args: { "p_group": string,"p_members": (string)[] }; Returns: undefined
+                           },
 "bulk_update_tasks":
 { Args: { "p_patch": Json,"p_task_ids": (string)[] }; Returns: number
+                           },
+"create_chat_group":
+{ Args: { "p_members": (string)[],"p_name": string }; Returns: string
                            },
 "create_task":
 { Args: { "p_collaborator_ids"?: (string)[],"p_label_ids"?: (string)[],"p_note"?: string,"p_task": Json }; Returns: {
@@ -758,6 +861,9 @@ isOneToOne: true
                            },
 "dashboard_summary":
 { Args: { "p_from"?: string,"p_member"?: string,"p_to"?: string }; Returns: Json
+                           },
+"mark_chat_group_read":
+{ Args: { "p_group": string }; Returns: undefined
                            },
 "mark_conversation_read":
 { Args: { "p_conversation": string }; Returns: undefined
@@ -775,6 +881,12 @@ isOneToOne: true
               "done": number,"is_private": boolean,"name": string,"overdue": number,"project_id": string,"status": Database["public"]['Enums']["project_status"],"target_date": string,"total": number
             }[]
                            },
+"remove_chat_group_member":
+{ Args: { "p_group": string,"p_user": string }; Returns: undefined
+                           },
+"rename_chat_group":
+{ Args: { "p_group": string,"p_name": string }; Returns: undefined
+                           },
 "set_todo_done":
 { Args: { "p_done": boolean,"p_todo": string }; Returns: undefined
                            },
@@ -783,6 +895,45 @@ isOneToOne: true
               "completed": number,"created": number,"day": string
             }[]
                            },
+"tasks_in_view":
+{ Args: { "p_member"?: string }; Returns: {
+              "archived_at": string | null,
+"archived_by": string | null,
+"assigned_at": string | null,
+"assigned_by": string | null,
+"assignee_id": string | null,
+"blocker_description": string | null,
+"completed_at": string | null,
+"completed_by": string | null,
+"created_at": string,
+"creator_id": string | null,
+"department_id": string | null,
+"description": string,
+"due_date": string | null,
+"due_time": string | null,
+"estimate_hours": number | null,
+"id": string,
+"is_blocked": boolean,
+"key": string,
+"number": number,
+"parent_id": string | null,
+"priority": Database["public"]['Enums']["task_priority"],
+"progress": number,
+"project_id": string | null,
+"search_text": string | null,
+"start_date": string | null,
+"status": Database["public"]['Enums']["task_status"],
+"title": string,
+"updated_at": string,
+"updated_by": string | null,
+"workspace_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "tasks"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "unread_conversation_count":
 { Args: Record<PropertyKey, never>; Returns: number
                            },

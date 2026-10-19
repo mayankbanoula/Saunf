@@ -104,6 +104,7 @@ project members/owner.
 | Dashboard, reports, calendar and team workload numbers                                                                         |                 everyone                 |              own + reportees'               |                own                 |
 | Personal to-do list (`todos`, `todo_completions`)                                                                              |       read anyone's; edit own only       |                  own only                   |              own only              |
 | Read / send private messages (`conversations`, `messages`)                                                                     | own conversations only (no admin access) |                  own only                   |              own only              |
+| Group chats (`chat_groups`, `chat_group_members`, `group_messages`)                                                            | groups they're in only (no admin access) |           groups they're in only            |       groups they're in only       |
 | Set who a member reports to                                                                                                    |                    ✅                    |                     ❌                      |                 ❌                 |
 | View assignment history                                                                                                        |             if can view task             |                    same                     |                same                |
 | Read notifications                                                                                                             |                 own only                 |                  own only                   |              own only              |
@@ -115,8 +116,10 @@ Notes:
 - "Tasks they work on" means _task worker_ (§2). Activity on a task is visible
   only if the task itself is visible. Opening a task you can see but don't work
   on shows only your own and your reportees' actions on it.
-- Reporting numbers (`dashboard_summary`, `task_throughput`, `project_progress`,
-  `workload_by_member`) count tasks by assignee within the caller's people scope.
+- Reporting numbers (`dashboard_summary`, `task_throughput`, `project_progress`)
+  and `tasks_in_view` / `activity_in_view` cover tasks where someone in the
+  caller's people scope is the assignee, creator or a collaborator.
+  `workload_by_member` counts by assignee.
   Their optional `p_member` argument narrows to one person and never widens the
   scope. The task list and board still follow §3 task visibility; set
   `task_visibility = participants` to hide other people's tasks there too.
@@ -129,6 +132,11 @@ Notes:
   Messages can't be edited by anyone. As with all data, anyone with direct
   database access (the Supabase project owner, or the service-role key) can still
   read the tables; the app never uses the service role for messages.
+- Group chats: only current members can read or post; admins have no access to
+  groups they aren't in. Only the group's creator can rename it or add and remove
+  people; anyone can leave. New members can read earlier messages; people who
+  leave or are removed lose access. Group changes go through `SECURITY DEFINER`
+  RPCs that check these rules; group messages are never logged.
 - Admins cannot read other users' notifications. Notifications are personal; the
   audit log already gives admins the information.
 - Comment and attachment rights inherit task visibility.

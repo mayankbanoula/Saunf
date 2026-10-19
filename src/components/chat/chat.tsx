@@ -1,14 +1,37 @@
 "use client";
 
 import { format, isToday, isYesterday } from "date-fns";
-import { Loader2Icon, SendIcon } from "lucide-react";
+import { Loader2Icon, LogOutIcon, PlusIcon, SendIcon, UsersIcon, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 
-import { fetchNewMessages, markConversationRead, sendMessage, type ChatMessage } from "@/actions/messages";
+import {
+  addGroupMembers,
+  createGroup,
+  fetchNewGroupMessages,
+  fetchNewMessages,
+  markConversationRead,
+  markGroupRead,
+  removeGroupMember,
+  renameGroup,
+  sendGroupMessage,
+  sendMessage,
+  type ChatMessage,
+} from "@/actions/messages";
 import { Button } from "@/components/ui/button";
-import { NativeSelect, Textarea } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Field } from "@/components/ui/form";
+import { Input, NativeSelect, Textarea } from "@/components/ui/input";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { UserAvatar } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 
 const POLL_MS = 4000;
@@ -40,21 +63,29 @@ function dayLabel(iso: string) {
   return format(d, "EEE d MMM yyyy");
 }
 
+/** A direct chat with one person, or a group chat. */
+export type ChatTarget =
+  | { kind: "direct"; otherId: string; name: string; conversationId: string | null }
+  | { kind: "group"; groupId: string; name: string };
+
 export function ChatThread({
   viewerId,
-  other,
-  conversationId: initialConversationId,
+  target,
+  names,
   initialMessages,
   hasUnread,
 }: {
   viewerId: string;
-  other: { id: string; name: string };
-  conversationId: string | null;
+  target: ChatTarget;
+  /** Sender names, shown above messages in group chats. */
+  names: Record<string, string>;
   initialMessages: ChatMessage[];
   hasUnread: boolean;
 }) {
   const router = useRouter();
-  const [conversationId, setConversationId] = React.useState(initialConversationId);
+  const isGroup = target.kind === "group";
+  // The id to poll: the group, or the direct conversation once it exists.
+  const [threadId, setThreadId] = React.useState(isGroup ? target.groupId : target.conversationId);
   const [messages, setMessages] = React.useState(initialMessages);
   const [draft, setDraft] = React.useState("");
   const [sending, setSending] = React.useState(false);
@@ -62,16 +93,18 @@ export function ChatThread({
   const lastAt = messages.at(-1)?.created_at ?? null;
 
   // Clear the unread badge for this chat once it's open.
+  const initialThreadId = target.kind === "group" ? target.groupId : target.conversationId;
   React.useEffect(() => {
-    if (initialConversationId && hasUnread) void markConversationRead(initialConversationId);
-  }, [initialConversationId, hasUnread]);
+    if (!initialThreadId || !hasUnread) return;
+    void (isGroup ? markGroupRead(initialThreadId) : markConversationRead(initialThreadId));
+  }, [initialThreadId, hasUnread, isGroup]);
 
   // Poll for new messages while the tab is visible.
   React.useEffect(() => {
-    if (!conversationId) return;
+    if (!threadId) return;
     const timer = window.setInterval(async () => {
       if (document.visibilityState !== "visible") return;
-      const res = await fetchNewMessages(conversationId, lastAt);
+      const res = await (isGroup ? fetchNewGroupMessages(threadId, lastAt) : fetchNewMessages(threadId, lastAt));
       if (res.ok && res.data.length) {
         setMessages((prev) => {
           const seen = new Set(prev.map((m) => m.id));
@@ -80,7 +113,7 @@ export function ChatThread({
       }
     }, POLL_MS);
     return () => window.clearInterval(timer);
-  }, [conversationId, lastAt]);
+  }, [threadId, lastAt, isGroup]);
 
   React.useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -90,13 +123,21 @@ export function ChatThread({
     const body = draft.trim();
     if (!body || sending) return;
     setSending(true);
-    const res = await sendMessage(other.id, body);
+    if (target.kind === "group") {
+      const res = await sendGroupMessage(target.groupId, body);
+      setSending(false);
+      if (!res.ok) return void toast.error(res.error);
+      setDraft("");
+      setMessages((prev) => [...prev, res.data]);
+      return;
+    }
+    const res = await sendMessage(target.otherId, body);
     setSending(false);
     if (!res.ok) return void toast.error(res.error);
     setDraft("");
     setMessages((prev) => [...prev, res.data.message]);
-    if (!conversationId) {
-      setConversationId(res.data.conversationId);
+    if (!threadId) {
+      setThreadId(res.data.conversationId);
       router.refresh(); // show the new chat in the list
     }
   };
@@ -106,17 +147,26 @@ export function ChatThread({
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3" aria-live="polite">
         {messages.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            Say hello to {other.name}. Only the two of you can see this chat.
+            {isGroup
+              ? `Say hello to ${target.name}. Only members of this group can see it.`
+              : `Say hello to ${target.name}. Only the two of you can see this chat.`}
           </p>
         ) : (
           <ol className="grid gap-1.5">
             {messages.map((m, i) => {
               const mine = m.sender_id === viewerId;
               const newDay = i === 0 || dayLabel(messages[i - 1].created_at) !== dayLabel(m.created_at);
+              // In groups, name the sender at the start of each run of their messages.
+              const showSender = isGroup && !mine && (newDay || messages[i - 1].sender_id !== m.sender_id);
               return (
                 <React.Fragment key={m.id}>
                   {newDay ? (
                     <li className="my-2 text-center text-[11px] text-muted-foreground">{dayLabel(m.created_at)}</li>
+                  ) : null}
+                  {showSender ? (
+                    <li className="mt-1 px-1 text-[11px] font-medium text-muted-foreground">
+                      {names[m.sender_id] ?? "Former member"}
+                    </li>
                   ) : null}
                   <li className={cn("flex", mine ? "justify-end" : "justify-start")}>
                     <div
@@ -148,8 +198,8 @@ export function ChatThread({
         }}
       >
         <Textarea
-          aria-label={`Message ${other.name}`}
-          placeholder={`Message ${other.name}…`}
+          aria-label={`Message ${target.name}`}
+          placeholder={`Message ${target.name}…`}
           rows={1}
           maxLength={4000}
           value={draft}
@@ -167,5 +217,194 @@ export function ChatThread({
         </Button>
       </form>
     </div>
+  );
+}
+
+type Person = { id: string; name: string };
+
+export function NewGroupButton({ people }: { people: Person[] }) {
+  const router = useRouter();
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const [members, setMembers] = React.useState<string[]>([]);
+  const [pending, startTransition] = React.useTransition();
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      const res = await createGroup(name, members);
+      if (!res.ok) return void toast.error(res.error);
+      setOpen(false);
+      setName("");
+      setMembers([]);
+      router.push(`/chat?group=${res.data.groupId}`);
+    });
+  };
+
+  return (
+    <>
+      <Button size="sm" variant="outline" className="w-full" onClick={() => setOpen(true)}>
+        <PlusIcon /> New group
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <form onSubmit={submit} className="grid gap-4">
+            <DialogHeader>
+              <DialogTitle>New group</DialogTitle>
+              <DialogDescription>Only the people in the group can read it. Admins can&apos;t.</DialogDescription>
+            </DialogHeader>
+            <Field label="Group name" htmlFor="group-name">
+              <Input id="group-name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} autoFocus />
+            </Field>
+            <Field label="People" htmlFor="group-members">
+              <MultiSelect
+                id="group-members"
+                options={people.map((p) => ({ value: p.id, label: p.name }))}
+                value={members}
+                onChange={setMembers}
+                placeholder="Choose people…"
+              />
+            </Field>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={pending || !name.trim() || members.length === 0}>
+                {pending ? <Loader2Icon className="animate-spin" /> : null}
+                Create group
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export function GroupMembersButton({
+  groupId,
+  groupName,
+  viewerId,
+  isCreator,
+  members,
+  people,
+}: {
+  groupId: string;
+  groupName: string;
+  viewerId: string;
+  isCreator: boolean;
+  members: Person[];
+  /** Everyone in the workspace, for adding people. */
+  people: Person[];
+}) {
+  const router = useRouter();
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState(groupName);
+  const [adding, setAdding] = React.useState<string[]>([]);
+  const [pending, startTransition] = React.useTransition();
+  const memberIds = new Set(members.map((m) => m.id));
+  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, done: string, after?: () => void) =>
+    startTransition(async () => {
+      const res = await fn();
+      if (!res.ok) return void toast.error(res.error);
+      toast.success(done);
+      after?.();
+    });
+
+  return (
+    <>
+      <Button size="xs" variant="outline" onClick={() => setOpen(true)}>
+        <UsersIcon /> {members.length}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{groupName}</DialogTitle>
+            <DialogDescription>
+              {members.length} {members.length === 1 ? "member" : "members"}.{" "}
+              {isCreator ? "You created this group." : "Only the person who created the group can change it."}
+            </DialogDescription>
+          </DialogHeader>
+          {isCreator ? (
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                run(() => renameGroup(groupId, name), "Group renamed");
+              }}
+            >
+              <Input aria-label="Group name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
+              <Button type="submit" variant="outline" disabled={pending || !name.trim() || name === groupName}>
+                Rename
+              </Button>
+            </form>
+          ) : null}
+          <ul className="grid max-h-64 gap-1 overflow-y-auto">
+            {members.map((m) => (
+              <li key={m.id} className="flex items-center gap-2 rounded-md px-1 py-1">
+                <UserAvatar name={m.name} id={m.id} size="sm" />
+                <span className="flex-1 truncate text-sm">
+                  {m.name}
+                  {m.id === viewerId ? " (you)" : ""}
+                </span>
+                {isCreator && m.id !== viewerId ? (
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={`Remove ${m.name}`}
+                    disabled={pending}
+                    onClick={() => run(() => removeGroupMember(groupId, m.id), `${m.name} removed`)}
+                  >
+                    <XIcon />
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {isCreator ? (
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                <MultiSelect
+                  options={people.filter((p) => !memberIds.has(p.id)).map((p) => ({ value: p.id, label: p.name }))}
+                  value={adding}
+                  onChange={setAdding}
+                  placeholder="Add people…"
+                />
+              </div>
+              <Button
+                variant="outline"
+                disabled={pending || adding.length === 0}
+                onClick={() =>
+                  run(
+                    () => addGroupMembers(groupId, adding),
+                    "People added",
+                    () => setAdding([]),
+                  )
+                }
+              >
+                Add
+              </Button>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              className="text-destructive"
+              disabled={pending}
+              onClick={() => {
+                if (!window.confirm(`Leave ${groupName}? You won't see its messages any more.`)) return;
+                run(
+                  () => removeGroupMember(groupId, viewerId),
+                  "You left the group",
+                  () => router.push("/chat"),
+                );
+              }}
+            >
+              <LogOutIcon /> Leave group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

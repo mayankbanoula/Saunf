@@ -29,17 +29,17 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
   const page = Math.max(1, Number(one(sp.page)) || 1);
   const supabase = await createClient();
 
-  // RLS: your own and your reportees' actions (admins: everyone's), plus the history of
-  // tasks you work on; workspace events only for admins. The person filter narrows that.
-  let query = supabase
-    .from("activity_events")
+  // Activity on tasks you're involved in and your own other actions; managers add their
+  // reportees', admins see everything. The audit tab shows workspace-level events only.
+  let query = (
+    audit ? supabase.from("activity_events") : supabase.rpc("activity_in_view", { p_member: view.member ?? undefined })
+  )
     .select(
       "id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title), project:projects(id, name)",
     )
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE);
   if (audit) query = query.is("task_id", null);
-  else if (view.ids) query = query.in("actor_id", view.ids);
   const { data, error } = await query;
   if (error) throw new Error(`Could not load activity: ${error.message}`);
   const rows = (data ?? []) as unknown as ActivityEvent[];
@@ -68,7 +68,7 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            {view.options.length ? "Your and your team's actions." : "Your own actions."}
+            {view.options.length ? "Activity on your and your team's tasks." : "Activity on your tasks."}
           </p>
         )}
       </div>

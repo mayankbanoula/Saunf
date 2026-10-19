@@ -89,8 +89,10 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
   const supabase = await createClient();
   const p_member = view.member ?? undefined;
 
-  let upcoming = supabase
-    .from("tasks")
+  // Tasks you're involved in (assignee, creator or collaborator); managers add their
+  // reportees', admins see every task. The person picker narrows to one person.
+  const upcoming = supabase
+    .rpc("tasks_in_view", { p_member })
     .select(
       "id, key, title, status, priority, due_date, due_time, assignee:profiles!tasks_assignee_profile_fkey(id, full_name, email)",
     )
@@ -101,25 +103,20 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
     .order("due_date")
     .order("due_time", { nullsFirst: false })
     .limit(8);
-  let recent = supabase
-    .from("tasks")
+  const recent = supabase
+    .rpc("tasks_in_view", { p_member })
     .select("id, key, title, status, updated_at, assignee:profiles!tasks_assignee_profile_fkey(id, full_name, email)")
     .is("archived_at", null)
     .order("updated_at", { ascending: false })
     .limit(8);
-  let activity = supabase
-    .from("activity_events")
+  const activity = supabase
+    .rpc("activity_in_view", { p_member })
     .select(
       "id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title)",
     )
     .not("task_id", "is", null)
     .order("created_at", { ascending: false })
     .limit(10);
-  if (view.ids) {
-    upcoming = upcoming.in("assignee_id", view.ids);
-    recent = recent.in("assignee_id", view.ids);
-    activity = activity.in("actor_id", view.ids);
-  }
 
   const [summaryRes, throughputRes, workloadRes, projectsRes, upcomingRes, recentRes, activityRes] = await Promise.all([
     supabase.rpc("dashboard_summary", { p_from: range.fromTs, p_to: range.toTs, p_member }),
@@ -138,18 +135,6 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
 
   const s = summaryRes.data as unknown as Summary;
   const hasAnyTasks = (recentRes.data?.length ?? 0) > 0;
-
-  if (!hasAnyTasks) {
-    return (
-      <EmptyState
-        icon={LayoutDashboardIcon}
-        title={view.ids ? `No tasks yet · ${view.label}` : "Your workspace has no tasks yet"}
-        description="Once tasks are assigned, this dashboard shows workload, deadlines, progress and recent activity — all from live data."
-        action={canCreateTasks(viewer) ? <NewTaskButton label="Create a task" /> : undefined}
-        className="mt-6"
-      />
-    );
-  }
 
   const rangeQS = `completed_from=${range.from}&completed_to=${range.to}`;
   const who = assigneeParam(view, viewer);
@@ -170,6 +155,14 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
 
   return (
     <div className="grid grid-cols-1 gap-5">
+      {hasAnyTasks ? null : (
+        <EmptyState
+          icon={LayoutDashboardIcon}
+          title="No tasks here yet"
+          description="Tasks you're assigned, create or collaborate on show up on this dashboard, with their deadlines, progress and activity."
+          action={canCreateTasks(viewer) ? <NewTaskButton label="Create a task" /> : undefined}
+        />
+      )}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
         <Metric label="Open tasks" value={s.open} href={`/tasks?open=1${who}`} />
         <Metric label="Assigned to me" value={s.assigned_to_me} href="/my-tasks?open=1" />
@@ -296,6 +289,7 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
             <CardTitle>Recently updated</CardTitle>
           </CardHeader>
           <CardContent>
+            {hasAnyTasks ? null : <p className="py-6 text-center text-sm text-muted-foreground">No tasks yet.</p>}
             <ul className="divide-y">
               {recentRes.data?.map((t) => (
                 <li key={t.id} className="flex items-center gap-2 py-2">
@@ -321,7 +315,11 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
             </Link>
           </CardHeader>
           <CardContent className="pl-8">
-            <ActivityTimeline events={(activityRes.data ?? []) as unknown as ActivityEvent[]} showTask />
+            {activityRes.data?.length ? (
+              <ActivityTimeline events={activityRes.data as unknown as ActivityEvent[]} showTask />
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">No activity on your tasks yet.</p>
+            )}
           </CardContent>
         </Card>
       </div>
