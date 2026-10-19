@@ -1,7 +1,7 @@
 "use client";
 
 import { format, isToday, isYesterday } from "date-fns";
-import { Loader2Icon, LogOutIcon, PlusIcon, SendIcon, UsersIcon, XIcon } from "lucide-react";
+import { CheckCheckIcon, CheckIcon, Loader2Icon, LogOutIcon, PlusIcon, SendIcon, UsersIcon, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
@@ -74,6 +74,7 @@ export function ChatThread({
   names,
   initialMessages,
   hasUnread,
+  initialReadUpTo,
 }: {
   viewerId: string;
   target: ChatTarget;
@@ -81,8 +82,11 @@ export function ChatThread({
   names: Record<string, string>;
   initialMessages: ChatMessage[];
   hasUnread: boolean;
+  /** Your messages sent at or before this time have been read (see ThreadUpdate). */
+  initialReadUpTo: string | null;
 }) {
   const router = useRouter();
+  const [readUpTo, setReadUpTo] = React.useState(initialReadUpTo);
   const isGroup = target.kind === "group";
   // The id to poll: the group, or the direct conversation once it exists.
   const [threadId, setThreadId] = React.useState(isGroup ? target.groupId : target.conversationId);
@@ -105,10 +109,12 @@ export function ChatThread({
     const timer = window.setInterval(async () => {
       if (document.visibilityState !== "visible") return;
       const res = await (isGroup ? fetchNewGroupMessages(threadId, lastAt) : fetchNewMessages(threadId, lastAt));
-      if (res.ok && res.data.length) {
+      if (!res.ok) return;
+      setReadUpTo(res.data.readUpTo);
+      if (res.data.messages.length) {
         setMessages((prev) => {
           const seen = new Set(prev.map((m) => m.id));
-          return [...prev, ...res.data.filter((m) => !seen.has(m.id))];
+          return [...prev, ...res.data.messages.filter((m) => !seen.has(m.id))];
         });
       }
     }, POLL_MS);
@@ -178,8 +184,19 @@ export function ChatThread({
                       )}
                     >
                       {m.body}
-                      <span className={cn("ml-2 text-[10px] opacity-70")}>
-                        {format(new Date(m.created_at), "HH:mm")}
+                      <span className="ml-2 inline-flex items-center gap-0.5 align-baseline text-[10px]">
+                        <span className="opacity-70">{format(new Date(m.created_at), "HH:mm")}</span>
+                        {mine ? (
+                          readUpTo && Date.parse(readUpTo) >= Date.parse(m.created_at) ? (
+                            <span role="img" aria-label="Read" title="Read">
+                              <CheckCheckIcon className="size-3.5 text-sky-300 dark:text-sky-800" />
+                            </span>
+                          ) : (
+                            <span role="img" aria-label="Sent" title="Sent" className="opacity-70">
+                              <CheckIcon className="size-3.5" />
+                            </span>
+                          )
+                        ) : null}
                       </span>
                     </div>
                   </li>

@@ -11,6 +11,7 @@ import { isActive, NAV_SECTIONS } from "@/components/layout/nav-items";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { UserMenu } from "@/components/layout/user-menu";
 import { ThemeToggle } from "@/components/theme";
+import { ChatNotifier } from "@/components/chat/chat-sound";
 import { TaskFormDialog } from "@/components/tasks/task-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTitle, SheetContent } from "@/components/ui/dialog";
@@ -161,6 +162,7 @@ export function AppShell({
                   <span className="hidden sm:inline">New task</span>
                 </Button>
               ) : null}
+              <ChatNotifier />
               <ThemeToggle />
               <NotificationsMenu initialUnread={unreadCount} />
               <UserMenu viewer={viewer} />

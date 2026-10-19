@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import type { ChatMessage } from "@/actions/messages";
 import { ChatThread, GroupMembersButton, NewChatPicker, NewGroupButton, type ChatTarget } from "@/components/chat/chat";
+import { ChatSoundToggle } from "@/components/chat/chat-sound";
 import { PageHeader } from "@/components/layout/page-header";
 import { RelativeTime } from "@/components/time";
 import { Card, Skeleton, UserAvatar } from "@/components/ui/primitives";
@@ -154,10 +155,13 @@ async function ChatContent({ searchParams }: { searchParams: PageProps<"/chat">[
     }
   }
 
-  const directRows: (Row & { otherId: string; conversationId: string })[] = (conversations ?? []).map((c) => {
+  const directRows: (Row & { otherId: string; conversationId: string; otherReadAt: string | null })[] = (
+    conversations ?? []
+  ).map((c) => {
     const mineIsA = c.user_a === viewer.id;
     const otherId = mineIsA ? c.user_b : c.user_a;
     const lastRead = mineIsA ? c.last_read_a : c.last_read_b;
+    const otherReadAt = mineIsA ? c.last_read_b : c.last_read_a;
     return {
       key: `dm:${otherId}`,
       href: `/chat?with=${otherId}`,
@@ -169,26 +173,36 @@ async function ChatContent({ searchParams }: { searchParams: PageProps<"/chat">[
       preview: preview.get(c.id) ?? "",
       otherId,
       conversationId: c.id,
+      otherReadAt,
     };
   });
-  const groupRows: (Row & { groupId: string; createdBy: string | null; memberIds: string[] })[] = (groups ?? []).map(
-    (g) => {
-      const me = g.chat_group_members.find((m) => m.user_id === viewer.id);
-      return {
-        key: `group:${g.id}`,
-        href: `/chat?group=${g.id}`,
-        name: g.name,
-        avatarId: g.id,
-        isGroup: true,
-        lastMessageAt: g.last_message_at,
-        unread: g.last_message_at !== null && (!me?.last_read_at || me.last_read_at < g.last_message_at),
-        preview: preview.get(g.id) ?? `${g.chat_group_members.length} members`,
-        groupId: g.id,
-        createdBy: g.created_by,
-        memberIds: g.chat_group_members.map((m) => m.user_id),
-      };
-    },
-  );
+  const groupRows: (Row & {
+    groupId: string;
+    createdBy: string | null;
+    memberIds: string[];
+    readUpTo: string | null;
+  })[] = (groups ?? []).map((g) => {
+    const me = g.chat_group_members.find((m) => m.user_id === viewer.id);
+    return {
+      key: `group:${g.id}`,
+      href: `/chat?group=${g.id}`,
+      name: g.name,
+      avatarId: g.id,
+      isGroup: true,
+      lastMessageAt: g.last_message_at,
+      unread: g.last_message_at !== null && (!me?.last_read_at || me.last_read_at < g.last_message_at),
+      preview: preview.get(g.id) ?? `${g.chat_group_members.length} members`,
+      groupId: g.id,
+      createdBy: g.created_by,
+      memberIds: g.chat_group_members.map((m) => m.user_id),
+      // Everyone else has read up to here (for the double tick); null if someone hasn't read yet.
+      readUpTo: (() => {
+        const others = g.chat_group_members.filter((m) => m.user_id !== viewer.id);
+        if (!others.length || others.some((m) => !m.last_read_at)) return null;
+        return others.map((m) => m.last_read_at!).sort()[0];
+      })(),
+    };
+  });
 
   // What's open: a group, or a direct chat with someone.
   const group = groupParam ? groupRows.find((g) => g.groupId === groupParam) : undefined;
@@ -197,10 +211,12 @@ async function ChatContent({ searchParams }: { searchParams: PageProps<"/chat">[
 
   let target: ChatTarget | null = null;
   let hasUnread = false;
+  let readUpTo: string | null = null;
   let thread: ChatMessage[] = [];
   if (group) {
     target = { kind: "group", groupId: group.groupId, name: group.name };
     hasUnread = group.unread;
+    readUpTo = group.readUpTo;
     const { data } = await supabase
       .from("group_messages")
       .select("id, sender_id, body, created_at")
@@ -218,6 +234,7 @@ async function ChatContent({ searchParams }: { searchParams: PageProps<"/chat">[
     }
     target = { kind: "direct", otherId: directWith, name: names.get(directWith)!, conversationId };
     hasUnread = directRow?.unread ?? false;
+    readUpTo = directRow?.otherReadAt ?? null;
     if (conversationId) {
       const { data } = await supabase
         .from("messages")
@@ -236,6 +253,7 @@ async function ChatContent({ searchParams }: { searchParams: PageProps<"/chat">[
         <div className="grid gap-2 border-b p-3">
           <NewChatPicker people={people} />
           <NewGroupButton people={people} />
+          <ChatSoundToggle />
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <ChatList
@@ -295,6 +313,7 @@ async function ChatContent({ searchParams }: { searchParams: PageProps<"/chat">[
                 names={Object.fromEntries(names)}
                 initialMessages={thread}
                 hasUnread={hasUnread}
+                initialReadUpTo={readUpTo}
               />
             </div>
           </>

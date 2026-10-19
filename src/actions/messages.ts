@@ -5,11 +5,18 @@ import { z } from "zod";
 
 import { dbErrorMessage, fail, ok, runAction, type ActionResult } from "@/lib/actions";
 import { viewerForAction } from "@/lib/auth/session";
+import { directReadUpTo, groupReadUpTo } from "@/lib/chat";
 import { createClient } from "@/lib/supabase/server";
 
 // RLS limits conversations and messages to their two participants; there is no admin access.
 
 export type ChatMessage = { id: string; sender_id: string; body: string; created_at: string };
+
+/**
+ * New messages plus read status for the ticks: your messages sent at or before
+ * `readUpTo` have been read (by the other person, or by everyone else in a group).
+ */
+export type ThreadUpdate = { messages: ChatMessage[]; readUpTo: string | null };
 
 const bodySchema = z.string().trim().min(1, "Write a message").max(4000, "Messages can be up to 4,000 characters");
 
@@ -41,9 +48,9 @@ export async function sendMessage(
 export async function fetchNewMessages(
   conversationId: string,
   after: string | null,
-): Promise<ActionResult<ChatMessage[]>> {
+): Promise<ActionResult<ThreadUpdate>> {
   return runAction(async () => {
-    await viewerForAction();
+    const viewer = await viewerForAction();
     if (!z.uuid().safeParse(conversationId).success) return fail("Invalid conversation.");
     const supabase = await createClient();
     let query = supabase
@@ -56,7 +63,7 @@ export async function fetchNewMessages(
     const { data, error } = await query;
     if (error) return fail(dbErrorMessage(error));
     if (data.length) await supabase.rpc("mark_conversation_read", { p_conversation: conversationId });
-    return ok(data);
+    return ok({ messages: data, readUpTo: await directReadUpTo(supabase, conversationId, viewer.id) });
   });
 }
 
@@ -118,9 +125,9 @@ export async function sendGroupMessage(groupId: string, body: string): Promise<A
 export async function fetchNewGroupMessages(
   groupId: string,
   after: string | null,
-): Promise<ActionResult<ChatMessage[]>> {
+): Promise<ActionResult<ThreadUpdate>> {
   return runAction(async () => {
-    await viewerForAction();
+    const viewer = await viewerForAction();
     if (!z.uuid().safeParse(groupId).success) return fail("Invalid group.");
     const supabase = await createClient();
     let query = supabase
@@ -133,7 +140,7 @@ export async function fetchNewGroupMessages(
     const { data, error } = await query;
     if (error) return fail(dbErrorMessage(error));
     if (data.length) await supabase.rpc("mark_chat_group_read", { p_group: groupId });
-    return ok(data);
+    return ok({ messages: data, readUpTo: await groupReadUpTo(supabase, groupId, viewer.id) });
   });
 }
 
@@ -186,5 +193,39 @@ export async function renameGroup(groupId: string, name: string): Promise<Action
     if (error) return fail(dbErrorMessage(error));
     refresh();
     return ok(null);
+  });
+}
+
+/**
+ * Lightweight check used app-wide: how many chats are unread and when the latest
+ * message from someone else arrived (to play a sound when it changes).
+ */
+export async function chatPulse(): Promise<ActionResult<{ unread: number; latestIncoming: string | null }>> {
+  return runAction(async () => {
+    const viewer = await viewerForAction();
+    const supabase = await createClient();
+    // RLS limits both message tables to chats the viewer is in.
+    const [{ data: unread }, { data: direct }, { data: group }] = await Promise.all([
+      supabase.rpc("unread_conversation_count"),
+      supabase
+        .from("messages")
+        .select("created_at")
+        .neq("sender_id", viewer.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("group_messages")
+        .select("created_at")
+        .neq("sender_id", viewer.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    const latest = [direct?.created_at, group?.created_at]
+      .filter((x): x is string => Boolean(x))
+      .sort()
+      .at(-1);
+    return ok({ unread: unread ?? 0, latestIncoming: latest ?? null });
   });
 }
