@@ -21,7 +21,7 @@ export function NewChatPicker({ people }: { people: { id: string; name: string }
       aria-label="Start a new chat"
       className="h-8 w-full text-sm"
       value=""
-      onChange={(e) => e.target.value && router.push(`/messages?with=${e.target.value}`)}
+      onChange={(e) => e.target.value && router.push(`/chat?with=${e.target.value}`)}
     >
       <option value="">New message…</option>
       {people.map((p) => (

@@ -25,7 +25,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
       { href: "/my-tasks", label: "My Tasks", icon: CircleUserRoundIcon },
       { href: "/todos", label: "My To-dos", icon: ListChecksIcon },
-      { href: "/messages", label: "Messages", icon: MessageSquareIcon },
+      { href: "/chat", label: "Chat", icon: MessageSquareIcon },
       { href: "/created-by-me", label: "Created by Me", icon: PenLineIcon },
       { href: "/tasks", label: "All Tasks", icon: ListTodoIcon },
     ],

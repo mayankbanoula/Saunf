@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Dark mode follows the `dark` class on <html> (set by the theme toggle), not the OS directly. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Saunf design tokens. Change the palette here and it applies everywhere.
  * Colours are OKLCH for perceptual consistency.
@@ -62,6 +65,46 @@
   --chart-2: #9966ff; /* created / secondary series (drawn dashed) */
   --chart-3: #c2410c; /* overdue */
   --chart-grid: oklch(0.93 0.008 240);
+}
+
+/* Dark theme: midnight-blue surfaces with the brand purples as accents. */
+.dark {
+  color-scheme: dark;
+
+  --background: oklch(0.17 0.03 265);
+  --foreground: oklch(0.94 0.01 250);
+  --card: oklch(0.21 0.035 265);
+  --popover: oklch(0.22 0.035 265);
+  --primary: var(--medium-purple);
+  --primary-foreground: oklch(0.16 0.03 265);
+  --secondary: oklch(0.26 0.035 265);
+  --secondary-foreground: oklch(0.9 0.02 250);
+  --muted: oklch(0.25 0.03 265);
+  --muted-foreground: oklch(0.72 0.03 255);
+  --accent: oklch(0.3 0.06 270);
+  --accent-foreground: oklch(0.94 0.02 250);
+  --highlight: var(--vivid-purple);
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.78 0.14 75);
+  --border: oklch(0.3 0.03 265);
+  --input: oklch(0.36 0.035 265);
+  --ring: var(--medium-purple);
+
+  --sidebar: oklch(0.19 0.035 265);
+  --sidebar-foreground: oklch(0.88 0.02 250);
+  --sidebar-accent: oklch(0.27 0.05 268);
+  --sidebar-accent-foreground: oklch(0.96 0.02 250);
+
+  --status-todo: oklch(0.68 0.01 250);
+  --status-in-progress: oklch(0.7 0.14 250);
+  --priority-low: oklch(0.68 0.01 250);
+  --priority-medium: oklch(0.72 0.12 245);
+
+  --chart-1: #8fa2ff;
+  --chart-2: #b38cff;
+  --chart-3: #f0804f;
+  --chart-grid: oklch(0.3 0.02 265);
 }
 
 @theme inline {
