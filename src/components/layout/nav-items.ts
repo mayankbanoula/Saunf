@@ -5,6 +5,7 @@ import {
   CircleUserRoundIcon,
   FolderKanbanIcon,
   LayoutDashboardIcon,
+  ListChecksIcon,
   ListTodoIcon,
   PenLineIcon,
   SettingsIcon,
@@ -22,6 +23,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
       { href: "/my-tasks", label: "My Tasks", icon: CircleUserRoundIcon },
+      { href: "/todos", label: "My To-dos", icon: ListChecksIcon },
       { href: "/created-by-me", label: "Created by Me", icon: PenLineIcon },
       { href: "/tasks", label: "All Tasks", icon: ListTodoIcon },
     ],

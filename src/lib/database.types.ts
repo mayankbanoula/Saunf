@@ -557,6 +557,52 @@ isOneToOne: false
       referencedColumns: ["workspace_id","id"]
     }
                   ]
+                },"todo_completions": {
+                  Row: {
+                    "completed_at": string,"day": string,"todo_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "completed_at"?: string,"day": string,"todo_id": string
+                  }
+                  Update: {
+                    "completed_at"?: string,"day"?: string,"todo_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "todo_completions_todo_id_fkey"
+      columns: ["todo_id"]
+isOneToOne: false
+      referencedRelation: "todos"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"todos": {
+                  Row: {
+                    "completed_at": string | null,"created_at": string,"due_date": string | null,"id": string,"repeat": Database["public"]['Enums']["todo_repeat"],"title": string,"user_id": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"id"?: string,"repeat"?: Database["public"]['Enums']["todo_repeat"],"title": string,"user_id": string,"workspace_id": string
+                  }
+                  Update: {
+                    "completed_at"?: string | null,"created_at"?: string,"due_date"?: string | null,"id"?: string,"repeat"?: Database["public"]['Enums']["todo_repeat"],"title"?: string,"user_id"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "todos_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "todos_workspace_id_user_id_fkey"
+      columns: ["workspace_id","user_id"]
+isOneToOne: false
+      referencedRelation: "workspace_members"
+      referencedColumns: ["workspace_id","user_id"]
+    }
+                  ]
                 },"workspace_members": {
                   Row: {
                     "deactivated_at": string | null,"deactivated_by": string | null,"department_id": string | null,"is_active": boolean,"joined_at": string,"reports_to": string | null,"role": Database["public"]['Enums']["workspace_role"],"user_id": string,"workspace_id": string
@@ -665,6 +711,9 @@ isOneToOne: true
               "done": number,"is_private": boolean,"name": string,"overdue": number,"project_id": string,"status": Database["public"]['Enums']["project_status"],"target_date": string,"total": number
             }[]
                            },
+"set_todo_done":
+{ Args: { "p_done": boolean,"p_todo": string }; Returns: undefined
+                           },
 "task_throughput":
 { Args: { "p_from": string,"p_member"?: string,"p_to": string }; Returns: {
               "completed": number,"created": number,"day": string
@@ -683,7 +732,7 @@ isOneToOne: true
                            }
           }
           Enums: {
-            "assignment_policy": "anyone"|"department"|"self","invitation_status": "pending"|"accepted"|"revoked","notification_type": "task_assigned"|"task_reassigned"|"collaborator_added"|"comment_added"|"mentioned"|"task_due_soon"|"task_overdue"|"task_completed"|"task_reopened"|"review_requested","project_status": "planning"|"active"|"on_hold"|"completed"|"cancelled","task_priority": "low"|"medium"|"high"|"urgent","task_status": "todo"|"in_progress"|"in_review"|"done","task_visibility": "all"|"participants","workspace_role": "admin"|"manager"|"employee"
+            "assignment_policy": "anyone"|"department"|"self","invitation_status": "pending"|"accepted"|"revoked","notification_type": "task_assigned"|"task_reassigned"|"collaborator_added"|"comment_added"|"mentioned"|"task_due_soon"|"task_overdue"|"task_completed"|"task_reopened"|"review_requested","project_status": "planning"|"active"|"on_hold"|"completed"|"cancelled","task_priority": "low"|"medium"|"high"|"urgent","task_status": "todo"|"in_progress"|"in_review"|"done","task_visibility": "all"|"participants","todo_repeat": "none"|"daily"|"weekdays","workspace_role": "admin"|"manager"|"employee"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -803,7 +852,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "assignment_policy": ["anyone", "department", "self"],"invitation_status": ["pending", "accepted", "revoked"],"notification_type": ["task_assigned", "task_reassigned", "collaborator_added", "comment_added", "mentioned", "task_due_soon", "task_overdue", "task_completed", "task_reopened", "review_requested"],"project_status": ["planning", "active", "on_hold", "completed", "cancelled"],"task_priority": ["low", "medium", "high", "urgent"],"task_status": ["todo", "in_progress", "in_review", "done"],"task_visibility": ["all", "participants"],"workspace_role": ["admin", "manager", "employee"]
+            "assignment_policy": ["anyone", "department", "self"],"invitation_status": ["pending", "accepted", "revoked"],"notification_type": ["task_assigned", "task_reassigned", "collaborator_added", "comment_added", "mentioned", "task_due_soon", "task_overdue", "task_completed", "task_reopened", "review_requested"],"project_status": ["planning", "active", "on_hold", "completed", "cancelled"],"task_priority": ["low", "medium", "high", "urgent"],"task_status": ["todo", "in_progress", "in_review", "done"],"task_visibility": ["all", "participants"],"todo_repeat": ["none", "daily", "weekdays"],"workspace_role": ["admin", "manager", "employee"]
           }
         }
 } as const
