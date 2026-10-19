@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Saunf logo: a stylised fennel seed (saunf) in forest green. */
+/** Saunf logo: a stylised fennel seed (saunf) in midnight blue and purple. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true" className={cn("size-7", className)}>
