@@ -8,11 +8,14 @@ import { createClient } from "@/lib/supabase/server";
 async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
   const viewer = await requireViewer();
   const supabase = await createClient();
-  const { count } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("recipient_id", viewer.id)
-    .is("read_at", null);
+  const [{ count }, { data: unreadMessages }] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("recipient_id", viewer.id)
+      .is("read_at", null),
+    supabase.rpc("unread_conversation_count"),
+  ]);
 
   return (
     <AppShell
@@ -25,6 +28,7 @@ async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
         canCreate: canCreateTasks(viewer),
       }}
       unreadCount={count ?? 0}
+      unreadMessages={unreadMessages ?? 0}
     >
       {children}
     </AppShell>
