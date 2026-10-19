@@ -6,10 +6,12 @@ import { Suspense } from "react";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/layout/page-header";
+import { PersonPicker } from "@/components/person-picker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, Skeleton } from "@/components/ui/primitives";
 import type { ActivityEvent } from "@/lib/activity";
 import { requireViewer } from "@/lib/auth/session";
+import { resolvePeopleView } from "@/lib/people";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -22,12 +24,13 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) {
   const viewer = await requireViewer();
   const sp = await searchParams;
-  const scope =
-    one(sp.scope) === "mine" ? "mine" : one(sp.scope) === "workspace" && viewer.role === "admin" ? "workspace" : "all";
+  const audit = one(sp.scope) === "workspace" && viewer.role === "admin";
+  const view = await resolvePeopleView(viewer, sp.person);
   const page = Math.max(1, Number(one(sp.page)) || 1);
   const supabase = await createClient();
 
-  // RLS: task events only for tasks the viewer can see; workspace events only for admins.
+  // RLS: your own and your reportees' actions (admins: everyone's), plus the history of
+  // tasks you work on; workspace events only for admins. The person filter narrows that.
   let query = supabase
     .from("activity_events")
     .select(
@@ -35,26 +38,39 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
     )
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE);
-  if (scope === "mine") query = query.eq("actor_id", viewer.id);
-  if (scope === "workspace") query = query.is("task_id", null);
+  if (audit) query = query.is("task_id", null);
+  else if (view.ids) query = query.in("actor_id", view.ids);
   const { data, error } = await query;
   if (error) throw new Error(`Could not load activity: ${error.message}`);
   const rows = (data ?? []) as unknown as ActivityEvent[];
   const hasMore = rows.length > PAGE;
   const events = rows.slice(0, PAGE);
 
-  const tab = (key: string, label: string) => (
-    <Button asChild size="xs" variant={scope === key ? "secondary" : "ghost"}>
-      <Link href={key === "all" ? "/activity" : `/activity?scope=${key}`}>{label}</Link>
-    </Button>
-  );
+  const params = (p: number) =>
+    new URLSearchParams({
+      ...(audit ? { scope: "workspace" } : {}),
+      ...(!audit && view.current !== view.options[0]?.value && view.options.length ? { person: view.current } : {}),
+      page: String(p),
+    });
 
   return (
     <>
-      <div className="mb-4 flex rounded-md border bg-card p-0.5 sm:w-fit" role="group" aria-label="Activity scope">
-        {tab("all", "Everything I can see")}
-        {tab("mine", "My actions")}
-        {viewer.role === "admin" ? tab("workspace", "Admin & audit") : null}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {audit ? null : <PersonPicker current={view.current} options={view.options} />}
+        {viewer.role === "admin" ? (
+          <div className="flex rounded-md border bg-card p-0.5 sm:w-fit" role="group" aria-label="Activity scope">
+            <Button asChild size="xs" variant={!audit ? "secondary" : "ghost"}>
+              <Link href="/activity">Tasks & projects</Link>
+            </Button>
+            <Button asChild size="xs" variant={audit ? "secondary" : "ghost"}>
+              <Link href="/activity?scope=workspace">Admin & audit</Link>
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {view.options.length ? "Your and your team's actions." : "Your own actions."}
+          </p>
+        )}
       </div>
       {events.length === 0 ? (
         <EmptyState
@@ -71,18 +87,10 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
       )}
       <div className="mt-3 flex justify-between">
         <Button asChild variant="outline" size="sm" className={cn(page <= 1 && "invisible")}>
-          <Link
-            href={`/activity?${new URLSearchParams({ ...(scope !== "all" ? { scope } : {}), page: String(page - 1) })}`}
-          >
-            Newer
-          </Link>
+          <Link href={`/activity?${params(page - 1)}`}>Newer</Link>
         </Button>
         <Button asChild variant="outline" size="sm" className={cn(!hasMore && "invisible")}>
-          <Link
-            href={`/activity?${new URLSearchParams({ ...(scope !== "all" ? { scope } : {}), page: String(page + 1) })}`}
-          >
-            Older
-          </Link>
+          <Link href={`/activity?${params(page + 1)}`}>Older</Link>
         </Button>
       </div>
     </>
@@ -92,7 +100,7 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
 export default function ActivityPage({ searchParams }: PageProps<"/activity">) {
   return (
     <>
-      <PageHeader title="Activity" description="A chronological record of changes across the tasks you can access." />
+      <PageHeader title="Activity" description="A chronological record of changes to tasks and projects." />
       <Suspense fallback={<Skeleton className="h-[500px]" />}>
         <ActivityContent searchParams={searchParams} />
       </Suspense>

@@ -173,6 +173,14 @@ async function main() {
   await admin.from("departments").update({ manager_id: ids.rahul }).eq("id", deptIds.Engineering);
   await admin.from("departments").update({ manager_id: ids.arjun }).eq("id", deptIds.Finance);
   await admin.from("workspace_members").update({ department_id: deptIds.Operations }).eq("user_id", ids.admin);
+  // Reporting lines: employees report to their department's manager.
+  const deptManager: Record<string, string> = { Engineering: ids.rahul, Finance: ids.arjun };
+  for (const u of USERS) {
+    const manager = deptManager[u.dept];
+    if (u.role === "employee" && manager) {
+      await admin.from("workspace_members").update({ reports_to: manager }).eq("user_id", ids[u.key]);
+    }
+  }
 
   const as: Record<string, SupabaseClient<Database>> = {};
   for (const u of USERS) as[u.key] = await signIn(u.email, PASSWORD);

@@ -20,6 +20,7 @@ const GROUPS: Record<string, string[] | null> = {
     "member_joined",
     "member_role_changed",
     "member_department_changed",
+    "member_manager_changed",
     "member_deactivated",
     "member_reactivated",
     "invitation_sent",

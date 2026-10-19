@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { ThroughputChart } from "@/components/charts";
 import { PageHeader } from "@/components/layout/page-header";
+import { PersonPicker } from "@/components/person-picker";
 import { RangePicker } from "@/components/range-picker";
 import {
   Card,
@@ -16,6 +17,7 @@ import {
 } from "@/components/ui/primitives";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireViewer } from "@/lib/auth/session";
+import { assigneeParam, resolvePeopleView } from "@/lib/people";
 import { resolveRange } from "@/lib/range";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -75,13 +77,16 @@ function Bar({
 
 async function ReportsContent({ searchParams }: { searchParams: PageProps<"/reports">["searchParams"] }) {
   const viewer = await requireViewer();
-  const range = resolveRange(await searchParams, viewer.settings.timezone);
+  const sp = await searchParams;
+  const range = resolveRange(sp, viewer.settings.timezone);
+  const view = await resolvePeopleView(viewer, sp.person);
+  const p_member = view.member ?? undefined;
   const supabase = await createClient();
   const [summaryRes, throughputRes, workloadRes, projectsRes, deptRes] = await Promise.all([
-    supabase.rpc("dashboard_summary", { p_from: range.fromTs, p_to: range.toTs }),
-    supabase.rpc("task_throughput", { p_from: range.from, p_to: range.to }),
-    supabase.rpc("workload_by_member", { p_from: range.fromTs, p_to: range.toTs }),
-    supabase.rpc("project_progress"),
+    supabase.rpc("dashboard_summary", { p_from: range.fromTs, p_to: range.toTs, p_member }),
+    supabase.rpc("task_throughput", { p_from: range.from, p_to: range.to, p_member }),
+    supabase.rpc("workload_by_member", { p_from: range.fromTs, p_to: range.toTs, p_member }),
+    supabase.rpc("project_progress", { p_member }),
     supabase.from("departments").select("id, name"),
   ]);
   const err = summaryRes.error ?? throughputRes.error ?? workloadRes.error ?? projectsRes.error;
@@ -95,8 +100,9 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
   }));
   const statusMax = Math.max(s.todo, s.in_progress, s.in_review, 1);
   const prioMax = Math.max(...Object.values(s.open_by_priority), 1);
+  const who = assigneeParam(view, viewer);
   const rangeQS = `completed_from=${range.from}&completed_to=${range.to}`;
-  const scopeNote = viewer.role === "admin" ? "All tasks in the workspace." : "Based on the tasks you have access to.";
+  const scopeNote = view.ids ? `${view.label}.` : "All tasks in the workspace.";
 
   return (
     <div className="grid grid-cols-1 gap-5">
@@ -107,17 +113,17 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
             label: "Created",
             value: s.created,
             hint: range.label,
-            href: `/tasks?created_from=${range.from}&created_to=${range.to}`,
+            href: `/tasks?created_from=${range.from}&created_to=${range.to}${who}`,
           },
-          { label: "Completed", value: s.completed, hint: range.label, href: `/tasks?status=done&${rangeQS}` },
+          { label: "Completed", value: s.completed, hint: range.label, href: `/tasks?status=done&${rangeQS}${who}` },
           {
             label: "Avg. time to complete",
             value: s.avg_cycle_hours != null ? `${(s.avg_cycle_hours / 24).toFixed(1)} d` : "—",
             hint: "for tasks completed in range",
-            href: `/tasks?status=done&${rangeQS}`,
+            href: `/tasks?status=done&${rangeQS}${who}`,
           },
-          { label: "Open now", value: s.open, hint: `${s.unassigned} unassigned`, href: "/tasks?open=1" },
-          { label: "Overdue now", value: s.overdue, hint: `${s.blocked} blocked`, href: "/tasks?due=overdue" },
+          { label: "Open now", value: s.open, hint: `${s.unassigned} unassigned`, href: `/tasks?open=1${who}` },
+          { label: "Overdue now", value: s.overdue, hint: `${s.blocked} blocked`, href: `/tasks?due=overdue${who}` },
         ].map((m) => (
           <Link key={m.label} href={m.href} className="rounded-lg border bg-card px-4 py-3 hover:border-primary/40">
             <div className="text-xs text-muted-foreground">{m.label}</div>
@@ -152,7 +158,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
                   label={STATUS_LABEL[st]}
                   value={s[st]}
                   max={statusMax}
-                  href={`/tasks?status=${st}`}
+                  href={`/tasks?status=${st}${who}`}
                   dot={STATUS_DOT[st]}
                 />
               ))}
@@ -171,7 +177,7 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
                   label={PRIORITY_LABEL[p]}
                   value={s.open_by_priority[p]}
                   max={prioMax}
-                  href={`/tasks?priority=${p}&open=1`}
+                  href={`/tasks?priority=${p}&open=1${who}`}
                 />
               ))}
             </ul>
@@ -285,12 +291,19 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
 
 async function Header({ searchParams }: { searchParams: PageProps<"/reports">["searchParams"] }) {
   const viewer = await requireViewer();
-  const range = resolveRange(await searchParams, viewer.settings.timezone);
+  const sp = await searchParams;
+  const range = resolveRange(sp, viewer.settings.timezone);
+  const view = await resolvePeopleView(viewer, sp.person);
   return (
     <PageHeader
       title="Reports"
       description="Workload, throughput and progress from live data."
-      actions={<RangePicker current={range.key} from={range.from} to={range.to} />}
+      actions={
+        <>
+          <PersonPicker current={view.current} options={view.options} />
+          <RangePicker current={range.key} from={range.from} to={range.to} />
+        </>
+      }
     />
   );
 }

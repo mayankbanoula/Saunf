@@ -85,12 +85,18 @@ async function TeamContent({ searchParams }: { searchParams: Promise<SP> }) {
                       <Badge variant={p.role === "employee" ? "secondary" : "accent"}>{ROLE_LABEL[p.role]}</Badge>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      <Link href={`/tasks?assignee=${p.id}&open=1`} className="hover:underline">
-                        {w?.open_count ?? 0}
-                      </Link>
+                      {w ? (
+                        <Link href={`/tasks?assignee=${p.id}&open=1`} className="hover:underline">
+                          {w.open_count}
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {Number(w?.overdue_count ?? 0) > 0 ? (
+                      {!w ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : Number(w.overdue_count) > 0 ? (
                         <Link href={`/tasks?assignee=${p.id}&due=overdue`} className="text-destructive hover:underline">
                           {w?.overdue_count}
                         </Link>
@@ -116,6 +122,8 @@ async function TeamContent({ searchParams }: { searchParams: Promise<SP> }) {
             const inDept = people.filter((p) => p.dept === d.id);
             const open = inDept.reduce((n, p) => n + Number(load.get(p.id)?.open_count ?? 0), 0);
             const overdue = inDept.reduce((n, p) => n + Number(load.get(p.id)?.overdue_count ?? 0), 0);
+            // Task numbers only cover people whose work you can see (you and your reportees).
+            const counted = inDept.filter((p) => load.has(p.id)).length;
             return (
               <Link key={d.id} href={`/team/departments/${d.id}`} className="group">
                 <Card className="h-full p-4 transition-colors group-hover:border-primary/40">
@@ -126,9 +134,17 @@ async function TeamContent({ searchParams }: { searchParams: Promise<SP> }) {
                   <div className="text-xs text-muted-foreground">
                     Manager: {d.manager ? displayName(d.manager) : "—"} · {inDept.length} people
                   </div>
-                  <div className="mt-1 text-xs">
-                    {open} open tasks{overdue ? <span className="text-destructive"> · {overdue} overdue</span> : null}
-                  </div>
+                  {counted ? (
+                    <div className="mt-1 text-xs">
+                      {open} open tasks{overdue ? <span className="text-destructive"> · {overdue} overdue</span> : null}
+                      {counted < inDept.length ? (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          · {counted} of {inDept.length} people
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <div className="mt-3 flex -space-x-1.5">
                     {inDept.slice(0, 8).map((p) => (
                       <UserAvatar key={p.id} size="sm" name={displayName(p)} id={p.id} className="ring-2 ring-card" />
