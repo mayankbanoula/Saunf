@@ -95,3 +95,41 @@ describe("reporting lines", () => {
     expect(data!.reports_to).toBeNull();
   });
 });
+
+describe("dashboard involvement", () => {
+  it("counts tasks you created or collaborate on, not only ones assigned to you", async () => {
+    const world = await buildWorld();
+    const open = async (who: typeof world.emp1, member?: string) =>
+      ((await who.client.rpc("dashboard_summary", { p_member: member })).data as unknown as Summary).open;
+
+    expect(await open(world.emp2)).toBe(0);
+    // emp2 creates a task for emp1 and is added as a collaborator on another of emp1's.
+    await createTask(world.emp2, { title: "Created for someone else", assignee_id: world.emp1.id });
+    await createTask(
+      world.emp1,
+      { title: "Shared work", assignee_id: world.emp1.id },
+      { collaborators: [world.emp2.id] },
+    );
+    await createTask(world.emp1, { title: "Not emp2's business", assignee_id: world.emp1.id });
+    expect(await open(world.emp2)).toBe(2);
+    expect(await open(world.emp1)).toBe(3);
+
+    const titles = async (who: typeof world.emp1) =>
+      ((await who.client.rpc("tasks_in_view").select("title")).data ?? []).map((t) => t.title).sort();
+    expect(await titles(world.emp2)).toEqual(["Created for someone else", "Shared work"]);
+
+    // Activity: everything on emp2's tasks (including emp1's changes), nothing on others.
+    const activity = (await world.emp2.client.rpc("activity_in_view").select("task_id")).data ?? [];
+    expect(activity.length).toBeGreaterThan(0);
+    const { data: hidden } = await world.admin.client
+      .from("tasks")
+      .select("id")
+      .eq("title", "Not emp2's business")
+      .single();
+    expect(activity.some((e) => e.task_id === hidden!.id)).toBe(false);
+
+    // Admins see everything; asking about someone outside your scope returns nothing.
+    expect(await open(world.admin)).toBe(3);
+    expect(await open(world.emp2, world.emp1.id)).toBe(0);
+  });
+});

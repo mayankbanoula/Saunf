@@ -309,9 +309,11 @@ test("a new employee signs up, lands on the dashboard, and assigns a task to a c
     expect(task!.assignee_id).toBe(w.emp1.id);
     expect(task!.creator?.email).toBe(email);
 
-    // And they can sign out and back in normally.
+    // And they can sign out and back in normally. Wait for sign-out to finish before
+    // navigating, or the navigation can cancel it and leave the session in place.
     await page.getByRole("button", { name: "Account menu" }).click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/login/);
     await login(page, email, "Riya-pass-123");
     await expect(page.getByRole("heading", { name: "Welcome back, Riya" })).toBeVisible();
   } finally {
