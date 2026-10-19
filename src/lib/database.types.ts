@@ -61,6 +61,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"conversations": {
+                  Row: {
+                    "created_at": string,"id": string,"last_message_at": string | null,"last_read_a": string | null,"last_read_b": string | null,"user_a": string,"user_b": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"last_message_at"?: string | null,"last_read_a"?: string | null,"last_read_b"?: string | null,"user_a": string,"user_b": string,"workspace_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"last_message_at"?: string | null,"last_read_a"?: string | null,"last_read_b"?: string | null,"user_a"?: string,"user_b"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "conversations_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "conversations_workspace_id_user_a_fkey"
+      columns: ["workspace_id","user_a"]
+isOneToOne: false
+      referencedRelation: "workspace_members"
+      referencedColumns: ["workspace_id","user_id"]
+    },{
+      foreignKeyName: "conversations_workspace_id_user_b_fkey"
+      columns: ["workspace_id","user_b"]
+isOneToOne: false
+      referencedRelation: "workspace_members"
+      referencedColumns: ["workspace_id","user_id"]
+    }
+                  ]
                 },"departments": {
                   Row: {
                     "created_at": string,"description": string | null,"id": string,"manager_id": string | null,"name": string,"updated_at": string,"workspace_id": string
@@ -148,6 +180,32 @@ isOneToOne: false
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"messages": {
+                  Row: {
+                    "body": string,"conversation_id": string,"created_at": string,"id": string,"sender_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"conversation_id": string,"created_at"?: string,"id"?: string,"sender_id": string
+                  }
+                  Update: {
+                    "body"?: string,"conversation_id"?: string,"created_at"?: string,"id"?: string,"sender_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "messages_conversation_id_fkey"
+      columns: ["conversation_id"]
+isOneToOne: false
+      referencedRelation: "conversations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "messages_sender_id_fkey"
+      columns: ["sender_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
       referencedColumns: ["id"]
     }
                   ]
@@ -701,6 +759,12 @@ isOneToOne: true
 "dashboard_summary":
 { Args: { "p_from"?: string,"p_member"?: string,"p_to"?: string }; Returns: Json
                            },
+"mark_conversation_read":
+{ Args: { "p_conversation": string }; Returns: undefined
+                           },
+"open_conversation":
+{ Args: { "p_other": string }; Returns: string
+                           },
 "people_in_scope":
 { Args: Record<PropertyKey, never>; Returns: {
               "email": string,"full_name": string,"reports_to": string,"user_id": string
@@ -718,6 +782,9 @@ isOneToOne: true
 { Args: { "p_from": string,"p_member"?: string,"p_to": string }; Returns: {
               "completed": number,"created": number,"day": string
             }[]
+                           },
+"unread_conversation_count":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "update_task":
 { Args: { "p_collaborator_ids"?: (string)[],"p_label_ids"?: (string)[],"p_note"?: string,"p_patch"?: Json,"p_task_id": string }; Returns: undefined

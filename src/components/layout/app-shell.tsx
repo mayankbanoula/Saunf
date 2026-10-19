@@ -54,10 +54,13 @@ function readCollapsed() {
 export function AppShell({
   viewer,
   unreadCount,
+  unreadMessages,
   children,
 }: {
   viewer: ShellViewer;
   unreadCount: number;
+  /** Conversations with unread messages, shown as a badge on Messages. */
+  unreadMessages: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -102,7 +105,12 @@ export function AppShell({
               </Button>
             ) : null}
           </div>
-          <SidebarNav pathname={pathname} role={viewer.role} collapsed={collapsed} />
+          <SidebarNav
+            pathname={pathname}
+            role={viewer.role}
+            collapsed={collapsed}
+            badges={{ "/messages": unreadMessages }}
+          />
           {collapsed ? (
             <div className="border-t p-2">
               <Button
@@ -129,7 +137,12 @@ export function AppShell({
             <div className="flex h-14 items-center border-b px-4">
               <Logo />
             </div>
-            <SidebarNav pathname={pathname} role={viewer.role} collapsed={false} />
+            <SidebarNav
+              pathname={pathname}
+              role={viewer.role}
+              collapsed={false}
+              badges={{ "/messages": unreadMessages }}
+            />
           </SheetContent>
         </Dialog>
 
@@ -164,7 +177,17 @@ export function AppShell({
   );
 }
 
-function SidebarNav({ pathname, role, collapsed }: { pathname: string; role: WorkspaceRole; collapsed: boolean }) {
+function SidebarNav({
+  pathname,
+  role,
+  collapsed,
+  badges,
+}: {
+  pathname: string;
+  role: WorkspaceRole;
+  collapsed: boolean;
+  badges: Record<string, number>;
+}) {
   return (
     <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Main">
       {NAV_SECTIONS.map((section, i) => (
@@ -179,6 +202,7 @@ function SidebarNav({ pathname, role, collapsed }: { pathname: string; role: Wor
               .filter((item) => !item.roles || item.roles.includes(role))
               .map((item) => {
                 const active = isActive(pathname, item.href);
+                const badge = badges[item.href] ?? 0;
                 const link = (
                   <Link
                     href={item.href}
@@ -189,8 +213,21 @@ function SidebarNav({ pathname, role, collapsed }: { pathname: string; role: Wor
                       collapsed && "justify-center px-0",
                     )}
                   >
-                    <item.icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                    <span className="relative">
+                      <item.icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
+                      {badge > 0 && collapsed ? (
+                        <span className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
+                      ) : null}
+                    </span>
                     {collapsed ? <span className="sr-only">{item.label}</span> : item.label}
+                    {badge > 0 && !collapsed ? (
+                      <span
+                        className="ml-auto rounded-full bg-primary px-1.5 text-[11px] font-medium text-primary-foreground tabular-nums"
+                        aria-label={`${badge} unread`}
+                      >
+                        {badge}
+                      </span>
+                    ) : null}
                   </Link>
                 );
                 return (
