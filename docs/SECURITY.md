@@ -102,6 +102,7 @@ project members/owner.
 | Rename / delete labels                                                                                                         |                 ✅                  |                     ✅                      |                 ❌                 |
 | View activity events on a task / project                                                                                       |                 all                 | own + reportees'; all on tasks they work on |   own; all on tasks they work on   |
 | Dashboard, reports, calendar and team workload numbers                                                                         |              everyone               |              own + reportees'               |                own                 |
+| Personal to-do list (`todos`, `todo_completions`)                                                                              |    read anyone's; edit own only     |                  own only                   |              own only              |
 | Set who a member reports to                                                                                                    |                 ✅                  |                     ❌                      |                 ❌                 |
 | View assignment history                                                                                                        |          if can view task           |                    same                     |                same                |
 | Read notifications                                                                                                             |              own only               |                  own only                   |              own only              |
@@ -118,6 +119,10 @@ Notes:
   Their optional `p_member` argument narrows to one person and never widens the
   scope. The task list and board still follow §3 task visibility; set
   `task_visibility = participants` to hide other people's tasks there too.
+- To-do lists are private. Only the owner can add, change, tick or delete items
+  (`set_todo_done` ticks today's date in the workspace timezone for repeating
+  items). Admins can read every list and its daily history but cannot change it.
+  Managers have no access to their reportees' lists.
 - Admins cannot read other users' notifications. Notifications are personal; the
   audit log already gives admins the information.
 - Comment and attachment rights inherit task visibility.

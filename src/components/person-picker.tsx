@@ -5,7 +5,15 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { NativeSelect } from "@/components/ui/input";
 
 /** Chooses whose tasks and activity a page shows; writes ?person= to the URL. */
-export function PersonPicker({ current, options }: { current: string; options: { value: string; label: string }[] }) {
+export function PersonPicker({
+  current,
+  options,
+  label = "Whose tasks to show",
+}: {
+  current: string;
+  options: { value: string; label: string }[];
+  label?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -13,7 +21,7 @@ export function PersonPicker({ current, options }: { current: string; options: {
 
   return (
     <NativeSelect
-      aria-label="Whose tasks to show"
+      aria-label={label}
       className="h-8 w-auto max-w-48 text-sm"
       value={current}
       onChange={(e) => {
