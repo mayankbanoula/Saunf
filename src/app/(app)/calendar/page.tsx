@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/primitives";
 import { requireViewer } from "@/lib/auth/session";
 import { dueTone } from "@/lib/dates";
-import { assigneeParam, resolvePeopleView } from "@/lib/people";
+import { assigneeParam, requestedMember, resolvePeopleView } from "@/lib/people";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_DOT } from "@/lib/tasks/constants";
 import { queryContext } from "@/lib/tasks/queries";
@@ -47,7 +47,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
   const sp = await searchParams;
   const ctx = queryContext(viewer);
   const mode = one(sp.view) === "week" ? "week" : "month";
-  const view = await resolvePeopleView(viewer, sp.person);
+  const viewPromise = resolvePeopleView(viewer, sp.person);
   const rawDate = one(sp.date);
   const anchor = rawDate && /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? parseISO(rawDate) : parseISO(ctx.today);
 
@@ -63,14 +63,14 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<SP> }) 
   const supabase = await createClient();
   // Tasks you're involved in (plus your reportees'; admins: all), narrowed by the person picker.
   const query = supabase
-    .rpc("tasks_in_view", { p_member: view.member ?? undefined })
+    .rpc("tasks_in_view", { p_member: requestedMember(viewer, sp.person) })
     .select("id, key, title, status, priority, due_date, due_time")
     .is("archived_at", null)
     .gte("due_date", format(rangeStart, "yyyy-MM-dd"))
     .lte("due_date", format(rangeEnd, "yyyy-MM-dd"))
     .order("due_time", { nullsFirst: true })
     .limit(MAX_TASKS);
-  const { data: tasks, error } = await query;
+  const [view, { data: tasks, error }] = await Promise.all([viewPromise, query]);
   if (error) throw new Error(`Could not load calendar: ${error.message}`);
 
   const byDay = new Map<string, NonNullable<typeof tasks>>();

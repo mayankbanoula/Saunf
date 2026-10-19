@@ -25,7 +25,7 @@ import {
 import type { ActivityEvent } from "@/lib/activity";
 import { canCreateTasks, requireViewer } from "@/lib/auth/session";
 import { addDaysIso } from "@/lib/dates";
-import { assigneeParam, resolvePeopleView } from "@/lib/people";
+import { assigneeParam, requestedMember, resolvePeopleView } from "@/lib/people";
 import { resolveRange } from "@/lib/range";
 import { createClient } from "@/lib/supabase/server";
 import { queryContext } from "@/lib/tasks/queries";
@@ -85,9 +85,10 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
   const sp = await searchParams;
   const range = resolveRange(sp, viewer.settings.timezone);
   const ctx = queryContext(viewer);
-  const view = await resolvePeopleView(viewer, sp.person);
+  // Resolve the person picker alongside the data instead of before it.
+  const viewPromise = resolvePeopleView(viewer, sp.person);
   const supabase = await createClient();
-  const p_member = view.member ?? undefined;
+  const p_member = requestedMember(viewer, sp.person);
 
   // Tasks you're involved in (assignee, creator or collaborator); managers add their
   // reportees', admins see every task. The person picker narrows to one person.
@@ -118,15 +119,17 @@ async function DashboardContent({ searchParams }: { searchParams: PageProps<"/da
     .order("created_at", { ascending: false })
     .limit(10);
 
-  const [summaryRes, throughputRes, workloadRes, projectsRes, upcomingRes, recentRes, activityRes] = await Promise.all([
-    supabase.rpc("dashboard_summary", { p_from: range.fromTs, p_to: range.toTs, p_member }),
-    supabase.rpc("task_throughput", { p_from: range.from, p_to: range.to, p_member }),
-    supabase.rpc("workload_by_member", { p_from: range.fromTs, p_to: range.toTs, p_member }),
-    supabase.rpc("project_progress", { p_member }),
-    upcoming,
-    recent,
-    activity,
-  ]);
+  const [view, summaryRes, throughputRes, workloadRes, projectsRes, upcomingRes, recentRes, activityRes] =
+    await Promise.all([
+      viewPromise,
+      supabase.rpc("dashboard_summary", { p_from: range.fromTs, p_to: range.toTs, p_member }),
+      supabase.rpc("task_throughput", { p_from: range.from, p_to: range.to, p_member }),
+      supabase.rpc("workload_by_member", { p_from: range.fromTs, p_to: range.toTs, p_member }),
+      supabase.rpc("project_progress", { p_member }),
+      upcoming,
+      recent,
+      activity,
+    ]);
 
   const firstError = [summaryRes, throughputRes, workloadRes, projectsRes, upcomingRes, recentRes, activityRes].find(
     (r) => r.error,

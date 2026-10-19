@@ -38,27 +38,22 @@ export const getViewer = cache(async (): Promise<Viewer | null | { membership: f
   const userId = await getUserId();
   if (!userId) return null;
 
+  // One round trip: membership, profile, workspace and its settings together.
   const supabase = await createClient();
-  const [{ data: profile }, { data: member }] = await Promise.all([
-    supabase.from("profiles").select("id, email, full_name, job_title").eq("id", userId).maybeSingle(),
-    supabase
-      .from("workspace_members")
-      .select("workspace_id, role, department_id, is_active, workspaces(name, task_prefix)")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .order("joined_at")
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const { data: member } = await supabase
+    .from("workspace_members")
+    .select(
+      "workspace_id, role, department_id, is_active, profiles!workspace_members_user_id_fkey(id, email, full_name, job_title), workspaces(name, task_prefix, workspace_settings(*))",
+    )
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .order("joined_at")
+    .limit(1)
+    .maybeSingle();
 
-  if (!profile || !member || !member.workspaces) return { membership: false };
-
-  const { data: settings } = await supabase
-    .from("workspace_settings")
-    .select("*")
-    .eq("workspace_id", member.workspace_id)
-    .single();
-  if (!settings) return { membership: false };
+  const profile = member?.profiles;
+  const settings = member?.workspaces?.workspace_settings;
+  if (!member || !profile || !member.workspaces || !settings) return { membership: false };
 
   return {
     id: profile.id,

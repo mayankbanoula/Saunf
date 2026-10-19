@@ -76,3 +76,14 @@ export function assigneeParam(view: PeopleView, viewer: Viewer) {
   if (!view.member) return "";
   return `&assignee=${view.member === viewer.id ? "me" : view.member}`;
 }
+
+/**
+ * The person to narrow to, read straight from ?person= so data queries can start
+ * without waiting for resolvePeopleView. The database never widens scope for an
+ * out-of-reach id (it just returns nothing), so this is safe to pass as p_member.
+ */
+export function requestedMember(viewer: Viewer, raw: string | string[] | undefined): string | undefined {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value === "me") return viewer.id;
+  return value && /^[0-9a-f-]{36}$/i.test(value) ? value : undefined;
+}
