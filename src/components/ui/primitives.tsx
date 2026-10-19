@@ -59,7 +59,7 @@ const badgeVariants = cva(
         outline: "text-foreground",
         accent: "border-transparent bg-accent text-accent-foreground",
         destructive: "border-transparent bg-destructive/10 text-destructive",
-        warning: "border-transparent bg-warning/15 text-[oklch(0.45_0.1_60)]",
+        warning: "border-transparent bg-warning/15 text-[oklch(0.45_0.1_60)] dark:text-[oklch(0.82_0.12_75)]",
       },
     },
     defaultVariants: { variant: "secondary" },
@@ -114,12 +114,12 @@ export function Progress({ className, value, ...props }: React.ComponentProps<ty
 }
 
 const AVATAR_TONES = [
-  "bg-[oklch(0.93_0.04_285)] text-[oklch(0.4_0.12_285)]",
-  "bg-[oklch(0.92_0.04_245)] text-[oklch(0.38_0.09_250)]",
-  "bg-[oklch(0.93_0.05_70)] text-[oklch(0.42_0.09_60)]",
-  "bg-[oklch(0.92_0.04_300)] text-[oklch(0.4_0.1_300)]",
-  "bg-[oklch(0.93_0.04_20)] text-[oklch(0.42_0.1_25)]",
-  "bg-[oklch(0.93_0.03_230)] text-[oklch(0.35_0.1_255)]",
+  "bg-[oklch(0.93_0.04_285)] text-[oklch(0.4_0.12_285)] dark:bg-[oklch(0.35_0.08_285)] dark:text-[oklch(0.9_0.05_285)]",
+  "bg-[oklch(0.92_0.04_245)] text-[oklch(0.38_0.09_250)] dark:bg-[oklch(0.35_0.07_250)] dark:text-[oklch(0.9_0.05_250)]",
+  "bg-[oklch(0.93_0.05_70)] text-[oklch(0.42_0.09_60)] dark:bg-[oklch(0.38_0.07_60)] dark:text-[oklch(0.92_0.06_70)]",
+  "bg-[oklch(0.92_0.04_300)] text-[oklch(0.4_0.1_300)] dark:bg-[oklch(0.36_0.08_300)] dark:text-[oklch(0.9_0.05_300)]",
+  "bg-[oklch(0.93_0.04_20)] text-[oklch(0.42_0.1_25)] dark:bg-[oklch(0.37_0.08_25)] dark:text-[oklch(0.9_0.05_25)]",
+  "bg-[oklch(0.93_0.03_230)] text-[oklch(0.35_0.1_255)] dark:bg-[oklch(0.35_0.07_240)] dark:text-[oklch(0.9_0.05_240)]",
 ];
 
 function toneFor(seed: string) {
@@ -163,7 +163,7 @@ const alertVariants = cva("relative w-full rounded-lg border px-4 py-3 text-sm [
       default: "bg-card",
       destructive: "border-destructive/30 bg-destructive/5 text-destructive",
       success: "border-[var(--status-done)]/30 bg-accent text-accent-foreground",
-      warning: "border-warning/40 bg-warning/10 text-[oklch(0.4_0.09_60)]",
+      warning: "border-warning/40 bg-warning/10 text-[oklch(0.4_0.09_60)] dark:text-[oklch(0.85_0.11_75)]",
     },
   },
   defaultVariants: { variant: "default" },

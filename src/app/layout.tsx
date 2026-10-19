@@ -1,8 +1,7 @@
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
 import type { Metadata, Viewport } from "next";
-import { Toaster } from "sonner";
-
+import { THEME_SCRIPT, ThemedToaster } from "@/components/theme";
 import { TooltipProvider } from "@/components/ui/overlays";
 
 import "./globals.css";
@@ -14,15 +13,22 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#002f70",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#002f70" },
+    { media: "(prefers-color-scheme: dark)", color: "#141a33" },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    // The theme script adds the `dark` class before React hydrates.
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-        <Toaster position="bottom-right" richColors closeButton />
+        <ThemedToaster />
       </body>
     </html>
   );

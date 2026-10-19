@@ -70,7 +70,7 @@ function Metric({
         className={cn(
           "mt-1 text-2xl font-semibold tabular-nums",
           tone === "danger" && value > 0 && "text-destructive",
-          tone === "warning" && value > 0 && "text-[oklch(0.5_0.13_60)]",
+          tone === "warning" && value > 0 && "text-[oklch(0.5_0.13_60)] dark:text-[oklch(0.82_0.13_70)]",
         )}
       >
         {value}

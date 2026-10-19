@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils";
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true" className={cn("size-7", className)}>
-      <rect width="32" height="32" rx="8" fill="var(--primary)" />
+      <rect width="32" height="32" rx="8" fill="var(--midnight-blue)" />
       <path
         d="M16 6.5c4.6 3.4 6.6 7 6.6 10.4 0 3.9-2.9 7.6-6.6 8.6-3.7-1-6.6-4.7-6.6-8.6 0-3.4 2-7 6.6-10.4Z"
-        fill="var(--highlight)"
+        fill="var(--medium-purple)"
       />
-      <path d="M16 9.5v14" stroke="var(--primary)" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M16 14.2l-2.6-2M16 18l2.8-2.3" stroke="var(--primary)" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M16 9.5v14" stroke="var(--midnight-blue)" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M16 14.2l-2.6-2M16 18l2.8-2.3" stroke="var(--midnight-blue)" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
 }

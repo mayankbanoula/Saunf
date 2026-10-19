@@ -10,6 +10,7 @@ import { GlobalSearch } from "@/components/layout/global-search";
 import { isActive, NAV_SECTIONS } from "@/components/layout/nav-items";
 import { NotificationsMenu } from "@/components/layout/notifications-menu";
 import { UserMenu } from "@/components/layout/user-menu";
+import { ThemeToggle } from "@/components/theme";
 import { TaskFormDialog } from "@/components/tasks/task-form-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTitle, SheetContent } from "@/components/ui/dialog";
@@ -59,7 +60,7 @@ export function AppShell({
 }: {
   viewer: ShellViewer;
   unreadCount: number;
-  /** Conversations with unread messages, shown as a badge on Messages. */
+  /** Conversations with unread messages, shown as a badge on Chat. */
   unreadMessages: number;
   children: React.ReactNode;
 }) {
@@ -109,7 +110,7 @@ export function AppShell({
             pathname={pathname}
             role={viewer.role}
             collapsed={collapsed}
-            badges={{ "/messages": unreadMessages }}
+            badges={{ "/chat": unreadMessages }}
           />
           {collapsed ? (
             <div className="border-t p-2">
@@ -137,12 +138,7 @@ export function AppShell({
             <div className="flex h-14 items-center border-b px-4">
               <Logo />
             </div>
-            <SidebarNav
-              pathname={pathname}
-              role={viewer.role}
-              collapsed={false}
-              badges={{ "/messages": unreadMessages }}
-            />
+            <SidebarNav pathname={pathname} role={viewer.role} collapsed={false} badges={{ "/chat": unreadMessages }} />
           </SheetContent>
         </Dialog>
 
@@ -165,6 +161,7 @@ export function AppShell({
                   <span className="hidden sm:inline">New task</span>
                 </Button>
               ) : null}
+              <ThemeToggle />
               <NotificationsMenu initialUnread={unreadCount} />
               <UserMenu viewer={viewer} />
             </div>

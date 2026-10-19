@@ -54,7 +54,7 @@ export function PriorityBadge({
 
 const DUE_CLASSES = {
   overdue: "text-destructive font-medium",
-  today: "text-[oklch(0.5_0.13_60)] font-medium",
+  today: "text-[oklch(0.5_0.13_60)] font-medium dark:text-[oklch(0.82_0.13_70)]",
   soon: "text-foreground",
   later: "text-muted-foreground",
   done: "text-muted-foreground",
