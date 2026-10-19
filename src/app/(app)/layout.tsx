@@ -2,17 +2,19 @@ import { Suspense } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { ShellSkeleton } from "@/components/layout/shell-skeleton";
-import { canCreateTasks, requireViewer } from "@/lib/auth/session";
+import { canCreateTasks, getUserId, requireViewer } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 async function AuthenticatedShell({ children }: { children: React.ReactNode }) {
-  const viewer = await requireViewer();
+  // Fetch the badge counts alongside the viewer instead of after it.
   const supabase = await createClient();
-  const [{ count }, { data: unreadMessages }] = await Promise.all([
+  const userId = await getUserId();
+  const [viewer, { count }, { data: unreadMessages }] = await Promise.all([
+    requireViewer(),
     supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
-      .eq("recipient_id", viewer.id)
+      .eq("recipient_id", userId ?? "")
       .is("read_at", null),
     supabase.rpc("unread_conversation_count"),
   ]);

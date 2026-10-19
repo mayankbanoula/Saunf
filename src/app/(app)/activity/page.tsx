@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, Skeleton } from "@/components/ui/primitives";
 import type { ActivityEvent } from "@/lib/activity";
 import { requireViewer } from "@/lib/auth/session";
-import { resolvePeopleView } from "@/lib/people";
+import { requestedMember, resolvePeopleView } from "@/lib/people";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -25,14 +25,16 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
   const viewer = await requireViewer();
   const sp = await searchParams;
   const audit = one(sp.scope) === "workspace" && viewer.role === "admin";
-  const view = await resolvePeopleView(viewer, sp.person);
+  const viewPromise = resolvePeopleView(viewer, sp.person);
   const page = Math.max(1, Number(one(sp.page)) || 1);
   const supabase = await createClient();
 
   // Activity on tasks you're involved in and your own other actions; managers add their
   // reportees', admins see everything. The audit tab shows workspace-level events only.
   let query = (
-    audit ? supabase.from("activity_events") : supabase.rpc("activity_in_view", { p_member: view.member ?? undefined })
+    audit
+      ? supabase.from("activity_events")
+      : supabase.rpc("activity_in_view", { p_member: requestedMember(viewer, sp.person) })
   )
     .select(
       "id, event_type, created_at, old_value, new_value, metadata, actor:profiles!activity_events_actor_id_fkey(id, full_name, email), task:tasks(key, title), project:projects(id, name)",
@@ -40,7 +42,7 @@ async function ActivityContent({ searchParams }: { searchParams: Promise<SP> }) 
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE, page * PAGE);
   if (audit) query = query.is("task_id", null);
-  const { data, error } = await query;
+  const [view, { data, error }] = await Promise.all([viewPromise, query]);
   if (error) throw new Error(`Could not load activity: ${error.message}`);
   const rows = (data ?? []) as unknown as ActivityEvent[];
   const hasMore = rows.length > PAGE;

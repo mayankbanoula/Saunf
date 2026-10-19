@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/primitives";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireViewer } from "@/lib/auth/session";
-import { assigneeParam, resolvePeopleView } from "@/lib/people";
+import { assigneeParam, requestedMember, resolvePeopleView } from "@/lib/people";
 import { resolveRange } from "@/lib/range";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -79,10 +79,12 @@ async function ReportsContent({ searchParams }: { searchParams: PageProps<"/repo
   const viewer = await requireViewer();
   const sp = await searchParams;
   const range = resolveRange(sp, viewer.settings.timezone);
-  const view = await resolvePeopleView(viewer, sp.person);
-  const p_member = view.member ?? undefined;
+  // Resolve the person picker alongside the data instead of before it.
+  const viewPromise = resolvePeopleView(viewer, sp.person);
+  const p_member = requestedMember(viewer, sp.person);
   const supabase = await createClient();
-  const [summaryRes, throughputRes, workloadRes, projectsRes, deptRes] = await Promise.all([
+  const [view, summaryRes, throughputRes, workloadRes, projectsRes, deptRes] = await Promise.all([
+    viewPromise,
     supabase.rpc("dashboard_summary", { p_from: range.fromTs, p_to: range.toTs, p_member }),
     supabase.rpc("task_throughput", { p_from: range.from, p_to: range.to, p_member }),
     supabase.rpc("workload_by_member", { p_from: range.fromTs, p_to: range.toTs, p_member }),
