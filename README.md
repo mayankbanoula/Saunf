@@ -49,14 +49,15 @@ cp .env.example .env.local
 
 Fill in `.env.local` with the values from `npx supabase status`:
 
-| Variable                               | Required  | Description                                                                                       |
-| -------------------------------------- | --------- | ------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | yes       | API URL (local: `http://127.0.0.1:54321`)                                                         |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes       | Publishable/anon key. Safe for the browser.                                                       |
-| `SUPABASE_SECRET_KEY`                  | yes       | Secret/service-role key. **Server only.** Used solely for Auth admin calls (invite, create, ban). |
-| `NEXT_PUBLIC_SITE_URL`                 | yes       | Base URL of the app, used in invite and reset links                                               |
-| `CRON_SECRET`                          | for email | Bearer secret for `/api/cron/email-notifications`                                                 |
-| `RESEND_API_KEY`, `EMAIL_FROM`         | optional  | Turns on notification emails. Without them, in-app notifications still work.                      |
+| Variable                                                             | Required  | Description                                                                                       |
+| -------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                                           | yes       | API URL (local: `http://127.0.0.1:54321`)                                                         |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`                               | yes       | Publishable/anon key. Safe for the browser.                                                       |
+| `SUPABASE_SECRET_KEY`                                                | yes       | Secret/service-role key. **Server only.** Used solely for Auth admin calls (invite, create, ban). |
+| `NEXT_PUBLIC_SITE_URL`                                               | yes       | Base URL of the app, used in invite and reset links                                               |
+| `CRON_SECRET`                                                        | for email | Bearer secret for `/api/cron/email-notifications`                                                 |
+| `RESEND_API_KEY`, `EMAIL_FROM`                                       | optional  | Turns on notification emails. Without them, in-app notifications still work.                      |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | optional  | Free browser/phone push notifications. Generate keys with `npx web-push generate-vapid-keys`.     |
 
 ### 3. Create the workspace and first admin
 

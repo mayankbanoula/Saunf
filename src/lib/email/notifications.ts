@@ -1,7 +1,5 @@
 import "server-only";
 
-import { after } from "next/server";
-
 import { publicEnv } from "@/lib/env";
 import { emailConfigured, sendEmail } from "@/lib/email/send";
 import { describeNotification } from "@/lib/notifications";
@@ -107,19 +105,4 @@ export async function deliverNotificationEmails(opts: { actorId?: string } = {})
     }
   }
   return { configured: true, sent, skipped, failed };
-}
-
-/**
- * Emails the notifications an action just created, after the response is sent
- * so the action stays fast. The scheduled cron picks up anything missed.
- */
-export function emailNotificationsAfter(actorId: string) {
-  if (!emailConfigured() || !process.env.SUPABASE_SECRET_KEY) return;
-  after(async () => {
-    try {
-      await deliverNotificationEmails({ actorId });
-    } catch (e) {
-      console.error("[email] immediate delivery failed", e instanceof Error ? e.message : e);
-    }
-  });
 }

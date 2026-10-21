@@ -6,7 +6,7 @@ import { z } from "zod";
 import { dbErrorMessage, fail, ok, runAction, validationFailure, type ActionResult } from "@/lib/actions";
 import { canCreateTasks, viewerForAction } from "@/lib/auth/session";
 import type { Json } from "@/lib/database.types";
-import { emailNotificationsAfter } from "@/lib/email/notifications";
+import { deliverNotificationsAfter } from "@/lib/delivery";
 import { createClient } from "@/lib/supabase/server";
 import { ATTACHMENT_BUCKET, ATTACHMENT_MAX_BYTES, ATTACHMENT_MIME_TYPES } from "@/lib/tasks/constants";
 import {
@@ -140,7 +140,7 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<{
       })
       .single();
     if (error || !data) return fail(error ? dbErrorMessage(error) : "Could not create the task.");
-    emailNotificationsAfter(viewer.id);
+    deliverNotificationsAfter(viewer.id);
     refresh();
     return ok(data);
   });
@@ -175,7 +175,7 @@ export async function updateTask(
       p_note: ids.data.note,
     });
     if (error) return fail(dbErrorMessage(error));
-    emailNotificationsAfter(viewer.id);
+    deliverNotificationsAfter(viewer.id);
     refresh();
     return ok(null);
   });
@@ -208,7 +208,7 @@ export async function bulkUpdateTasks(input: z.input<typeof bulkUpdateSchema>): 
       p_patch: pickPatch(parsed.data.patch),
     });
     if (error) return fail(dbErrorMessage(error));
-    emailNotificationsAfter(viewer.id);
+    deliverNotificationsAfter(viewer.id);
     refresh();
     return ok(data ?? 0);
   });
@@ -261,7 +261,7 @@ export async function addComment(input: z.input<typeof commentSchema>): Promise<
       mentioned_user_ids: parsed.data.mentioned_user_ids,
     });
     if (error) return fail(dbErrorMessage(error));
-    emailNotificationsAfter(viewer.id);
+    deliverNotificationsAfter(viewer.id);
     refresh();
     return ok(null);
   });

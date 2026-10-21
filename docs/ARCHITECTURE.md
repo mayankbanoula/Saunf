@@ -153,7 +153,13 @@ Separate timestamp concepts on `tasks`: `created_at` (immutable), `assigned_at`
   response (`next/server` `after()`, `src/lib/email/notifications.ts`).
   `/api/cron/email-notifications` (needs `CRON_SECRET`) sends whatever is left,
   such as due-date reminders and retries. Each notification is claimed before
-  sending, so it is never emailed twice. Auth emails
+  sending, so it is never emailed twice.
+- Push: free Web Push (VAPID keys, `web-push` package). People turn it on per
+  device in Settings; `public/sw.js` shows the pop-up and opens the task on
+  click. Devices are stored in `push_subscriptions` (server-only; people add and
+  remove their own through RPCs). Pushes go out with the emails, claimed through
+  `notifications.pushed_at`; devices the push service reports gone are removed.
+  iPhones need Saunf added to the home screen first (`app/manifest.ts`). Auth emails
   (invite, password reset) are sent by Supabase Auth's SMTP configuration.
 
 See `docs/SECURITY.md` for the permission matrix and RLS model.
