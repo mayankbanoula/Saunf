@@ -289,14 +289,14 @@ isOneToOne: false
                   ]
                 },"notifications": {
                   Row: {
-                    "actor_id": string | null,"created_at": string,"data": NonNullable<Json>,"dedupe_key": string | null,"emailed_at": string | null,"id": string,"read_at": string | null,"recipient_id": string,"task_id": string | null,"type": Database["public"]['Enums']["notification_type"],"workspace_id": string
+                    "actor_id": string | null,"created_at": string,"data": NonNullable<Json>,"dedupe_key": string | null,"emailed_at": string | null,"id": string,"pushed_at": string | null,"read_at": string | null,"recipient_id": string,"task_id": string | null,"type": Database["public"]['Enums']["notification_type"],"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "actor_id"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"dedupe_key"?: string | null,"emailed_at"?: string | null,"id"?: string,"read_at"?: string | null,"recipient_id": string,"task_id"?: string | null,"type": Database["public"]['Enums']["notification_type"],"workspace_id": string
+                    "actor_id"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"dedupe_key"?: string | null,"emailed_at"?: string | null,"id"?: string,"pushed_at"?: string | null,"read_at"?: string | null,"recipient_id": string,"task_id"?: string | null,"type": Database["public"]['Enums']["notification_type"],"workspace_id": string
                   }
                   Update: {
-                    "actor_id"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"dedupe_key"?: string | null,"emailed_at"?: string | null,"id"?: string,"read_at"?: string | null,"recipient_id"?: string,"task_id"?: string | null,"type"?: Database["public"]['Enums']["notification_type"],"workspace_id"?: string
+                    "actor_id"?: string | null,"created_at"?: string,"data"?: NonNullable<Json>,"dedupe_key"?: string | null,"emailed_at"?: string | null,"id"?: string,"pushed_at"?: string | null,"read_at"?: string | null,"recipient_id"?: string,"task_id"?: string | null,"type"?: Database["public"]['Enums']["notification_type"],"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -413,6 +413,26 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "workspace_members"
       referencedColumns: ["workspace_id","user_id"]
+    }
+                  ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": string,"p256dh": string,"user_agent": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"p256dh": string,"user_agent"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"p256dh"?: string,"user_agent"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "push_subscriptions_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
     }
                   ]
                 },"task_assignments": {
@@ -862,6 +882,9 @@ isOneToOne: true
 "dashboard_summary":
 { Args: { "p_from"?: string,"p_member"?: string,"p_to"?: string }; Returns: Json
                            },
+"delete_push_subscription":
+{ Args: { "p_endpoint": string }; Returns: undefined
+                           },
 "mark_chat_group_read":
 { Args: { "p_group": string }; Returns: undefined
                            },
@@ -886,6 +909,9 @@ isOneToOne: true
                            },
 "rename_chat_group":
 { Args: { "p_group": string,"p_name": string }; Returns: undefined
+                           },
+"save_push_subscription":
+{ Args: { "p_auth": string,"p_endpoint": string,"p_p256dh": string,"p_user_agent"?: string }; Returns: undefined
                            },
 "set_todo_done":
 { Args: { "p_done": boolean,"p_todo": string }; Returns: undefined

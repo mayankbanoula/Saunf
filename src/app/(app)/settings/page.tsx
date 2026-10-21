@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { PushToggle } from "@/components/settings/push-toggle";
 import { PasswordForm, ProfileForm } from "@/components/settings/settings-forms";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Skeleton } from "@/components/ui/primitives";
 import { requireViewer } from "@/lib/auth/session";
@@ -37,6 +38,19 @@ async function SettingsContent() {
               email_notifications: profile?.email_notifications ?? true,
             }}
           />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Push notifications</CardTitle>
+            <CardDescription>
+              Free pop-up alerts in your browser or on your phone. Turn on for each device.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PushToggle />
         </CardContent>
       </Card>
       <Card>

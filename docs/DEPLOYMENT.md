@@ -31,14 +31,16 @@ Saunf runs on Vercel, with Supabase as the database, auth and file store. These 
 1. Import the repository. The framework preset is detected as Next.js.
 2. Environment variables (Production, and Preview if you use it):
 
-   | Name                                   | Value                                                      |
-   | -------------------------------------- | ---------------------------------------------------------- |
-   | `NEXT_PUBLIC_SUPABASE_URL`             | `https://<ref>.supabase.co`                                |
-   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | publishable key                                            |
-   | `SUPABASE_SECRET_KEY`                  | secret key. Do not expose it with a `NEXT_PUBLIC_` prefix. |
-   | `NEXT_PUBLIC_SITE_URL`                 | your production URL                                        |
-   | `CRON_SECRET`                          | a long random string, if you want notification emails      |
-   | `RESEND_API_KEY`, `EMAIL_FROM`         | optional, for notification emails                          |
+   | Name                                                | Value                                                                                                      |
+   | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+   | `NEXT_PUBLIC_SUPABASE_URL`                          | `https://<ref>.supabase.co`                                                                                |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`              | publishable key                                                                                            |
+   | `SUPABASE_SECRET_KEY`                               | secret key. Do not expose it with a `NEXT_PUBLIC_` prefix.                                                 |
+   | `NEXT_PUBLIC_SITE_URL`                              | your production URL                                                                                        |
+   | `CRON_SECRET`                                       | a long random string, if you want notification emails                                                      |
+   | `RESEND_API_KEY`, `EMAIL_FROM`                      | optional, for notification emails                                                                          |
+   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | optional, for free push notifications. Run `npx web-push generate-vapid-keys` once and paste the two keys. |
+   | `VAPID_SUBJECT`                                     | optional, `mailto:you@company.com` or your https URL                                                       |
 
 3. Deploy, then open `https://<your-app>/signup` and create your account. On a fresh database the first sign-up
    creates the workspace and becomes its **admin**. Rename the workspace in **Admin → Workspace settings**.
@@ -51,10 +53,10 @@ Saunf runs on Vercel, with Supabase as the database, auth and file store. These 
 
 ## 3. Scheduled work
 
-| What                                                                | Where it runs                                                                               | Schedule                                                                       |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Due-soon and overdue notifications, auto-archive of completed tasks | `pg_cron` inside Postgres (`private.run_scheduled_jobs()`)                                  | every 15 minutes                                                               |
-| Notification emails                                                 | Vercel Cron → `GET /api/cron/email-notifications` with `Authorization: Bearer $CRON_SECRET` | `vercel.json`: daily (task emails are also sent immediately after each action) |
+| What                                                                | Where it runs                                                                               | Schedule                                                                                  |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Due-soon and overdue notifications, auto-archive of completed tasks | `pg_cron` inside Postgres (`private.run_scheduled_jobs()`)                                  | every 15 minutes                                                                          |
+| Notification emails                                                 | Vercel Cron → `GET /api/cron/email-notifications` with `Authorization: Bearer $CRON_SECRET` | `vercel.json`: daily (task emails and pushes are also sent immediately after each action) |
 
 Vercel's Hobby plan only allows daily cron jobs. On Hobby, either change the schedule in `vercel.json` to a daily one, or call the endpoint from another scheduler with the bearer secret. In-app reminders don't depend on Vercel, because they run inside Postgres.
 
