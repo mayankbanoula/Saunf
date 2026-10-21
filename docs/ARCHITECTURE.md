@@ -141,13 +141,19 @@ Separate timestamp concepts on `tasks`: `created_at` (immutable), `assigned_at`
 
 - Assignment, reassignment, comment, mention, completion, reopen and
   "review requested" (status → In review) notifications are created by triggers.
-  Minor field edits do not notify.
+  Other changes by someone else (status, priority, dates, progress, blocked,
+  title, description, project, estimate) send one "task updated" notification to
+  the creator, assignee and collaborators, listing what changed.
 - Due-soon and overdue notifications are created by `generate_due_notifications()`,
   scheduled every 15 minutes by `pg_cron` (migration `…_cron.sql`). A unique index
   makes it idempotent (one due-soon and one overdue notice per task per due date).
-- Email: notification emails are optional. `/api/cron/email-notifications` sends
-  unsent notifications through Resend when `RESEND_API_KEY` and `CRON_SECRET` are
-  configured; otherwise it reports that email is not configured. Auth emails
+- Email: notification emails are optional and need `RESEND_API_KEY`, `EMAIL_FROM`,
+  the workspace setting and each person's own preference. Task actions (create,
+  edit, assign, comment) email the notifications they caused right after the
+  response (`next/server` `after()`, `src/lib/email/notifications.ts`).
+  `/api/cron/email-notifications` (needs `CRON_SECRET`) sends whatever is left,
+  such as due-date reminders and retries. Each notification is claimed before
+  sending, so it is never emailed twice. Auth emails
   (invite, password reset) are sent by Supabase Auth's SMTP configuration.
 
 See `docs/SECURITY.md` for the permission matrix and RLS model.

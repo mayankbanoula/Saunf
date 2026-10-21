@@ -950,7 +950,7 @@ isOneToOne: true
                            }
           }
           Enums: {
-            "assignment_policy": "anyone"|"department"|"self","invitation_status": "pending"|"accepted"|"revoked","notification_type": "task_assigned"|"task_reassigned"|"collaborator_added"|"comment_added"|"mentioned"|"task_due_soon"|"task_overdue"|"task_completed"|"task_reopened"|"review_requested","project_status": "planning"|"active"|"on_hold"|"completed"|"cancelled","task_priority": "low"|"medium"|"high"|"urgent","task_status": "todo"|"in_progress"|"in_review"|"done","task_visibility": "all"|"participants","todo_repeat": "none"|"daily"|"weekdays","workspace_role": "admin"|"manager"|"employee"
+            "assignment_policy": "anyone"|"department"|"self","invitation_status": "pending"|"accepted"|"revoked","notification_type": "task_assigned"|"task_reassigned"|"collaborator_added"|"comment_added"|"mentioned"|"task_due_soon"|"task_overdue"|"task_completed"|"task_reopened"|"review_requested"|"task_updated","project_status": "planning"|"active"|"on_hold"|"completed"|"cancelled","task_priority": "low"|"medium"|"high"|"urgent","task_status": "todo"|"in_progress"|"in_review"|"done","task_visibility": "all"|"participants","todo_repeat": "none"|"daily"|"weekdays","workspace_role": "admin"|"manager"|"employee"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1070,7 +1070,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "assignment_policy": ["anyone", "department", "self"],"invitation_status": ["pending", "accepted", "revoked"],"notification_type": ["task_assigned", "task_reassigned", "collaborator_added", "comment_added", "mentioned", "task_due_soon", "task_overdue", "task_completed", "task_reopened", "review_requested"],"project_status": ["planning", "active", "on_hold", "completed", "cancelled"],"task_priority": ["low", "medium", "high", "urgent"],"task_status": ["todo", "in_progress", "in_review", "done"],"task_visibility": ["all", "participants"],"todo_repeat": ["none", "daily", "weekdays"],"workspace_role": ["admin", "manager", "employee"]
+            "assignment_policy": ["anyone", "department", "self"],"invitation_status": ["pending", "accepted", "revoked"],"notification_type": ["task_assigned", "task_reassigned", "collaborator_added", "comment_added", "mentioned", "task_due_soon", "task_overdue", "task_completed", "task_reopened", "review_requested", "task_updated"],"project_status": ["planning", "active", "on_hold", "completed", "cancelled"],"task_priority": ["low", "medium", "high", "urgent"],"task_status": ["todo", "in_progress", "in_review", "done"],"task_visibility": ["all", "participants"],"todo_repeat": ["none", "daily", "weekdays"],"workspace_role": ["admin", "manager", "employee"]
           }
         }
 } as const

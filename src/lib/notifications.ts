@@ -2,7 +2,7 @@ import type { NotificationType } from "@/lib/tasks/constants";
 
 type NotificationLike = {
   type: NotificationType;
-  data: { key?: string; title?: string; excerpt?: string; note?: string };
+  data: { key?: string; title?: string; excerpt?: string; note?: string; changes?: string[] };
   actor: { full_name: string; email: string } | null;
 };
 
@@ -31,5 +31,10 @@ export function describeNotification(n: NotificationLike): { text: string; detai
       return { text: `${who} reopened ${task}`, detail: n.data.title };
     case "review_requested":
       return { text: `${who} moved ${task} to review`, detail: n.data.title };
+    case "task_updated":
+      return {
+        text: `${who} updated ${task}`,
+        detail: n.data.changes?.length ? `Changed ${n.data.changes.join(", ")}` : n.data.title,
+      };
   }
 }

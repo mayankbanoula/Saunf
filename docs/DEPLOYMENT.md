@@ -51,10 +51,10 @@ Saunf runs on Vercel, with Supabase as the database, auth and file store. These 
 
 ## 3. Scheduled work
 
-| What                                                                | Where it runs                                                                               | Schedule                        |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------- |
-| Due-soon and overdue notifications, auto-archive of completed tasks | `pg_cron` inside Postgres (`private.run_scheduled_jobs()`)                                  | every 15 minutes                |
-| Notification emails                                                 | Vercel Cron → `GET /api/cron/email-notifications` with `Authorization: Bearer $CRON_SECRET` | `vercel.json`: every 15 minutes |
+| What                                                                | Where it runs                                                                               | Schedule                                                                       |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Due-soon and overdue notifications, auto-archive of completed tasks | `pg_cron` inside Postgres (`private.run_scheduled_jobs()`)                                  | every 15 minutes                                                               |
+| Notification emails                                                 | Vercel Cron → `GET /api/cron/email-notifications` with `Authorization: Bearer $CRON_SECRET` | `vercel.json`: daily (task emails are also sent immediately after each action) |
 
 Vercel's Hobby plan only allows daily cron jobs. On Hobby, either change the schedule in `vercel.json` to a daily one, or call the endpoint from another scheduler with the bearer secret. In-app reminders don't depend on Vercel, because they run inside Postgres.
 
