@@ -13,7 +13,7 @@ export type NotificationItem = {
   type: NotificationType;
   created_at: string;
   read_at: string | null;
-  data: { key?: string; title?: string; excerpt?: string; note?: string; due_date?: string };
+  data: { key?: string; title?: string; excerpt?: string; note?: string; due_date?: string; changes?: string[] };
   actor: { id: string; full_name: string; email: string } | null;
   task: { key: string } | null;
 };
