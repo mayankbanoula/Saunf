@@ -122,9 +122,12 @@ export async function deliverPushNotifications(opts: { actorId?: string } = {}):
   return { configured: true, sent, failed, removed: gone.size };
 }
 
-/** Sends a test push to every device one person enabled. Returns how many devices got it. */
-export async function sendTestPush(userId: string): Promise<number> {
-  if (!pushConfigured()) return 0;
+/**
+ * Sends a test push to every device one person enabled. Returns how many push
+ * services accepted it, plus a short reason for each one that refused.
+ */
+export async function sendTestPush(userId: string): Promise<{ sent: number; errors: string[] }> {
+  if (!pushConfigured()) return { sent: 0, errors: [] };
   webpush.setVapidDetails(vapidSubject(), process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
   const admin = createAdminClient();
   const { data: subs, error } = await admin
@@ -136,9 +139,11 @@ export async function sendTestPush(userId: string): Promise<number> {
     title: "Saunf notifications are on",
     body: "You'll get a notification like this when someone assigns you a task, comments or changes it.",
     url: "/notifications",
-    tag: "saunf-test",
+    // A fresh tag each time, so repeated tests pop up instead of silently replacing the last one.
+    tag: `saunf-test-${Date.now()}`,
   });
   let sent = 0;
+  const errors: string[] = [];
   const gone: string[] = [];
   await Promise.all(
     (subs ?? []).map(async (s) => {
@@ -146,12 +151,17 @@ export async function sendTestPush(userId: string): Promise<number> {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload);
         sent++;
       } catch (e) {
-        const status = (e as { statusCode?: number }).statusCode;
-        if (status === 404 || status === 410) gone.push(s.id);
-        else console.error("[push] test send failed", status ?? (e instanceof Error ? e.message : e));
+        const err = e as { statusCode?: number; body?: string; message?: string };
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          gone.push(s.id);
+          return;
+        }
+        const reason = `${new URL(s.endpoint).hostname} ${err.statusCode ?? ""} ${(err.body || err.message || "").slice(0, 120)}`;
+        errors.push(reason.replace(/\s+/g, " ").trim());
+        console.error("[push] test send failed", reason);
       }
     }),
   );
   if (gone.length) await admin.from("push_subscriptions").delete().in("id", gone);
-  return sent;
+  return { sent, errors };
 }

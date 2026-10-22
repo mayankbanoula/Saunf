@@ -47,8 +47,14 @@ export async function sendTestPushNotification(): Promise<ActionResult<number>> 
   return runAction(async () => {
     const viewer = await viewerForAction();
     if (!pushConfigured()) return fail("Push notifications aren't set up on this server.");
-    const sent = await sendTestPush(viewer.id);
-    if (!sent) return fail("No device received it. Turn notifications off and on again on this device.");
+    const { sent, errors } = await sendTestPush(viewer.id);
+    if (!sent) {
+      return fail(
+        errors.length
+          ? `The push service refused it: ${errors[0]}`
+          : "No device is registered. Turn notifications off and on again on this device.",
+      );
+    }
     return ok(sent);
   });
 }
