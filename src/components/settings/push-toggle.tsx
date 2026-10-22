@@ -121,7 +121,12 @@ export function PushToggle() {
     setBusy(true);
     const res = await sendTestPushNotification();
     setBusy(false);
-    if (!res.ok) toast.error(res.error);
+    if (!res.ok) return void toast.error(res.error, { duration: 15000 });
+    toast.success(`Sent to ${res.data} ${res.data === 1 ? "device" : "devices"}`, {
+      description:
+        "No pop-up? Check that your computer or phone allows notifications for this browser, and that Focus / Do Not Disturb is off.",
+      duration: 10000,
+    });
   };
 
   const hint: Record<State, string> = {
