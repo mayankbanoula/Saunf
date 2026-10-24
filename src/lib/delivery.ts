@@ -4,7 +4,7 @@ import { after } from "next/server";
 
 import { deliverNotificationEmails } from "@/lib/email/notifications";
 import { emailConfigured } from "@/lib/email/send";
-import { deliverPushNotifications, pushConfigured } from "@/lib/push/notifications";
+import { deliverPushNotifications, pushChatMessage, pushConfigured, type ChatPush } from "@/lib/push/notifications";
 
 /**
  * Emails and pushes the notifications an action just created, after the
@@ -22,6 +22,18 @@ export function deliverNotificationsAfter(actorId: string) {
       if (r.status === "rejected") {
         console.error("[notify] immediate delivery failed", r.reason instanceof Error ? r.reason.message : r.reason);
       }
+    }
+  });
+}
+
+/** Pushes a chat message to its recipients after the response is sent. */
+export function pushChatMessageAfter(msg: ChatPush) {
+  if (!process.env.SUPABASE_SECRET_KEY || !pushConfigured()) return;
+  after(async () => {
+    try {
+      await pushChatMessage(msg);
+    } catch (e) {
+      console.error("[push] chat delivery failed", e instanceof Error ? e.message : e);
     }
   });
 }

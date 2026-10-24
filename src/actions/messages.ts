@@ -6,6 +6,7 @@ import { z } from "zod";
 import { dbErrorMessage, fail, ok, runAction, type ActionResult } from "@/lib/actions";
 import { viewerForAction } from "@/lib/auth/session";
 import { directReadUpTo, groupReadUpTo } from "@/lib/chat";
+import { pushChatMessageAfter } from "@/lib/delivery";
 import { createClient } from "@/lib/supabase/server";
 
 // RLS limits conversations and messages to their two participants; there is no admin access.
@@ -40,6 +41,14 @@ export async function sendMessage(
       .select("id, sender_id, body, created_at")
       .single();
     if (error) return fail(dbErrorMessage(error));
+    pushChatMessageAfter({
+      kind: "direct",
+      senderId: viewer.id,
+      senderName: viewer.fullName,
+      workspaceId: viewer.workspaceId,
+      otherUserId,
+      body: data.body,
+    });
     return ok({ conversationId, message: data });
   });
 }
@@ -117,6 +126,14 @@ export async function sendGroupMessage(groupId: string, body: string): Promise<A
       .select("id, sender_id, body, created_at")
       .single();
     if (error) return fail(dbErrorMessage(error));
+    pushChatMessageAfter({
+      kind: "group",
+      senderId: viewer.id,
+      senderName: viewer.fullName,
+      workspaceId: viewer.workspaceId,
+      groupId,
+      body: data.body,
+    });
     return ok(data);
   });
 }

@@ -136,8 +136,8 @@ export function PushToggle() {
       "On iPhone or iPad: tap Share, then “Add to Home Screen”, open Saunf from there and turn this on.",
     unconfigured: "Not set up on this server yet. Ask your admin.",
     denied: "Notifications are blocked for this site. Allow them in your browser's site settings, then reload.",
-    off: "Get a pop-up on this computer or phone when you're assigned a task, or a task you're on gets a comment or change.",
-    on: "This device gets a pop-up for your notifications, even when Saunf is closed.",
+    off: "Get a pop-up on this computer or phone when someone messages you, assigns you a task, or comments on or changes a task you're on.",
+    on: "This device gets a pop-up for your messages and notifications, even when Saunf is closed.",
   };
   const canToggle = state === "on" || state === "off";
 
