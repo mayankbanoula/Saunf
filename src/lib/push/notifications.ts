@@ -137,7 +137,7 @@ export async function sendTestPush(userId: string): Promise<{ sent: number; erro
   if (error) throw new Error(error.message);
   const payload = JSON.stringify({
     title: "Saunf notifications are on",
-    body: "You'll get a notification like this when someone assigns you a task, comments or changes it.",
+    body: "You'll get a notification like this when someone messages you, assigns you a task, or comments on or changes it.",
     url: "/notifications",
     // A fresh tag each time, so repeated tests pop up instead of silently replacing the last one.
     tag: `saunf-test-${Date.now()}`,
@@ -164,4 +164,83 @@ export async function sendTestPush(userId: string): Promise<{ sent: number; erro
   );
   if (gone.length) await admin.from("push_subscriptions").delete().in("id", gone);
   return { sent, errors };
+}
+
+export type ChatPush =
+  | { kind: "direct"; senderId: string; senderName: string; workspaceId: string; otherUserId: string; body: string }
+  | { kind: "group"; senderId: string; senderName: string; workspaceId: string; groupId: string; body: string };
+
+/**
+ * Pushes a new chat message to the other person (direct) or the other group
+ * members. Chats have their own unread badges, so this doesn't add to the bell.
+ * One notification per chat: a newer message replaces the older pop-up.
+ */
+export async function pushChatMessage(msg: ChatPush): Promise<number> {
+  if (!pushConfigured()) return 0;
+  webpush.setVapidDetails(vapidSubject(), process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
+  const admin = createAdminClient();
+
+  let recipientIds: string[];
+  let title: string;
+  let url: string;
+  let tag: string;
+  if (msg.kind === "direct") {
+    recipientIds = [msg.otherUserId];
+    title = msg.senderName;
+    url = `/chat?with=${msg.senderId}`;
+    tag = `chat-direct-${msg.senderId}`;
+  } else {
+    const [{ data: group }, { data: members, error }] = await Promise.all([
+      admin.from("chat_groups").select("name").eq("id", msg.groupId).maybeSingle(),
+      admin.from("chat_group_members").select("user_id").eq("group_id", msg.groupId),
+    ]);
+    if (error) throw new Error(error.message);
+    recipientIds = (members ?? []).map((m) => m.user_id);
+    title = group ? `${msg.senderName} in ${group.name}` : msg.senderName;
+    url = `/chat?group=${msg.groupId}`;
+    tag = `chat-group-${msg.groupId}`;
+  }
+
+  // Only active members of the workspace, never the sender.
+  const { data: active, error: activeError } = await admin
+    .from("workspace_members")
+    .select("user_id")
+    .eq("workspace_id", msg.workspaceId)
+    .eq("is_active", true)
+    .in(
+      "user_id",
+      recipientIds.filter((id) => id !== msg.senderId),
+    );
+  if (activeError) throw new Error(activeError.message);
+  if (!active?.length) return 0;
+
+  const { data: subs, error: subsError } = await admin
+    .from("push_subscriptions")
+    .select("id, endpoint, p256dh, auth")
+    .in(
+      "user_id",
+      active.map((a) => a.user_id),
+    );
+  if (subsError) throw new Error(subsError.message);
+
+  const body = msg.body.length > 140 ? `${msg.body.slice(0, 139)}…` : msg.body;
+  const payload = JSON.stringify({ title, body, url, tag });
+  let sent = 0;
+  const gone: string[] = [];
+  await Promise.all(
+    (subs ?? []).map(async (s) => {
+      try {
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, {
+          TTL: 24 * 3600,
+        });
+        sent++;
+      } catch (e) {
+        const status = (e as { statusCode?: number }).statusCode;
+        if (status === 404 || status === 410) gone.push(s.id);
+        else console.error("[push] chat send failed", status ?? (e instanceof Error ? e.message : e));
+      }
+    }),
+  );
+  if (gone.length) await admin.from("push_subscriptions").delete().in("id", gone);
+  return sent;
 }

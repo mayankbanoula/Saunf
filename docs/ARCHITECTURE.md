@@ -159,6 +159,8 @@ Separate timestamp concepts on `tasks`: `created_at` (immutable), `assigned_at`
   click. Devices are stored in `push_subscriptions` (server-only; people add and
   remove their own through RPCs). Pushes go out with the emails, claimed through
   `notifications.pushed_at`; devices the push service reports gone are removed.
+  Chat messages (direct and group) are pushed to the other active members
+  right after sending, one pop-up per chat; they don't go in the bell.
   iPhones need Saunf added to the home screen first (`app/manifest.ts`). Auth emails
   (invite, password reset) are sent by Supabase Auth's SMTP configuration.
 
